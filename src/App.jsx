@@ -10,6 +10,7 @@ import Contact from './pages/Contact' // ✅ import Contact page
 import Tracking from './pages/Tracking'
 import BookDelivery from './pages/BookDelivery'
 import Team from './components/Team'
+import GallerySlideshow from './components/GallerySlideshow'
 
 
 
@@ -18,6 +19,7 @@ const HomePage = () => (
     <Hero />
     <Features />
     <CTA />
+    <GallerySlideshow/>
     <Testimonials />
     <Team/>
     <Footer />

@@ -24,7 +24,7 @@ const Header = () => {
 
         {/* Auth Buttons */}
         <div className="hidden md:flex gap-4">
-          <Link to="/login" className="text-sm text-gray-700 hover:underline">Login</Link>
+          <Link to="/login" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Login</Link>
           <Link to="/register" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Sign Up</Link>
         </div>
 
@@ -47,7 +47,7 @@ const Header = () => {
             <Link to="/pricing" onClick={() => setIsOpen(false)}>Pricing</Link>
             <Link to="/contact" onClick={() => setIsOpen(false)}>Contact</Link>
             <hr />
-            <Link to="/login" onClick={() => setIsOpen(false)}>Login</Link>
+            <Link to="/login" onClick={() => setIsOpen(false)} >Login</Link>
             <Link to="/register" onClick={() => setIsOpen(false)} className="text-blue-600 font-semibold">Sign Up</Link>
           </nav>
         </div>
