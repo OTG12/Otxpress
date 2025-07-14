@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import emailjs from '@emailjs/browser';
 
 const BookDelivery = () => {
-  // Initialize EmailJS once
   useEffect(() => {
-    emailjs.init('iEAsch7baj-yH9MGl'); // Replace with your actual public key
+    emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
   }, []);
 
   const [formData, setFormData] = useState({
@@ -20,32 +19,35 @@ const BookDelivery = () => {
   });
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const templateParams = {
-      sender_name: formData.senderName,
-      sender_phone: formData.senderPhone,
-      pickup_address: formData.pickupAddress,
-      receiver_name: formData.receiverName,
-      receiver_phone: formData.receiverPhone,
-      delivery_address: formData.deliveryAddress,
-      package_type: formData.packageType,
-      package_weight: formData.packageWeight,
-      delivery_option: formData.deliveryOption,
-    };
+const templateParams = {
+  sender_name: formData.senderName,
+  sender_phone: formData.senderPhone,
+  pickup_address: formData.pickupAddress,
+  receiver_name: formData.receiverName,
+  receiver_phone: formData.receiverPhone,
+  delivery_address: formData.deliveryAddress,
+  package_type: formData.packageType,
+  package_weight: formData.packageWeight,
+  delivery_option: formData.deliveryOption,
+};
+
 
     try {
       await emailjs.send(
-        'service_s3lsr8d',     // e.g., service_xxxxxx
-        'template_5v72bqh',    // e.g., template_yyyyyy
-        templateParams
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        templateParams,
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
       );
 
       alert('Delivery booked successfully!');
@@ -116,5 +118,7 @@ const BookDelivery = () => {
 };
 
 export default BookDelivery;
+
+
 
 
