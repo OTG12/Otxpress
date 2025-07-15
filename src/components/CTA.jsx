@@ -21,7 +21,7 @@ const CTA = () => {
 
         <a
           href="/bookdelivery"
-          className="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold shadow-md hover:bg-gray-100 transition"
+          className="inline-block bg-yellow-400 text-black px-8 py-4 rounded-lg font-semibold shadow-md hover:bg-yellow-700 transition"
         >
           Book Now
         </a>
