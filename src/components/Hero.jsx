@@ -11,20 +11,17 @@ const Hero = () => {
     const interval = setInterval(() => {
       setCurrentImage((prev) => (prev + 1) % images.length);
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
-      {/* Background image */}
       <img
         src={images[currentImage]}
         alt="Hero background"
         className="absolute inset-0 w-full h-full object-cover object-center brightness-75 transition-all duration-1000"
       />
 
-      {/* Text Content */}
       <div className="relative z-10 max-w-screen-xl px-4 text-center text-white">
         <h1 className="mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl xl:text-6xl">
           Fast and Reliable Delivery Services
@@ -67,6 +64,7 @@ const Hero = () => {
 };
 
 export default Hero;
+
 
 
 
