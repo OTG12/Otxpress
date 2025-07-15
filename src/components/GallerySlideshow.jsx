@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
-import CardImg1 from "../assets/card1.jpg";
-import CardImg2 from "../assets/card2.jpg";
-import CardImg3 from "../assets/card3.jpg";
+import CardImg1 from "../assets/card1.jpeg";
+import CardImg2 from "../assets/card2.jpeg";
+import CardImg3 from "../assets/card3.jpeg";
 import CardImg4 from "../assets/card4.jpg";
 import CardImg5 from "../assets/card5.jpg";
 
