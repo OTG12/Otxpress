@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ import useNavigate
 import emailjs from '@emailjs/browser';
 
 const BookDelivery = () => {
+  const navigate = useNavigate(); // ✅ initialize navigate
+
   useEffect(() => {
     emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
   }, []);
@@ -29,18 +32,17 @@ const BookDelivery = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-const templateParams = {
-  sender_name: formData.senderName,
-  sender_phone: formData.senderPhone,
-  pickup_address: formData.pickupAddress,
-  receiver_name: formData.receiverName,
-  receiver_phone: formData.receiverPhone,
-  delivery_address: formData.deliveryAddress,
-  package_type: formData.packageType,
-  package_weight: formData.packageWeight,
-  delivery_option: formData.deliveryOption,
-};
-
+    const templateParams = {
+      sender_name: formData.senderName,
+      sender_phone: formData.senderPhone,
+      pickup_address: formData.pickupAddress,
+      receiver_name: formData.receiverName,
+      receiver_phone: formData.receiverPhone,
+      delivery_address: formData.deliveryAddress,
+      package_type: formData.packageType,
+      package_weight: formData.packageWeight,
+      delivery_option: formData.deliveryOption,
+    };
 
     try {
       await emailjs.send(
@@ -62,6 +64,8 @@ const templateParams = {
         packageWeight: '',
         deliveryOption: '',
       });
+
+      navigate('/'); // ✅ redirect to homepage
     } catch (error) {
       console.error('EmailJS Error:', error);
       alert('Something went wrong. Please try again later.');
@@ -69,7 +73,6 @@ const templateParams = {
   };
 
   return (
-    
     <div className="p-6 max-w-xl mx-auto bg-white shadow rounded-lg">
       <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">Book a Delivery</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -119,6 +122,7 @@ const templateParams = {
 };
 
 export default BookDelivery;
+
 
 
 
