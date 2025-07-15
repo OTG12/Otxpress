@@ -12,34 +12,37 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="relative h-screen pt-[80px] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[95vh] pt-[12rem] -mt-[5.25rem] flex items-center justify-center overflow-hidden">
+      {/* Background image */}
       <img
         src={images[currentImage]}
         alt="Hero background"
-        className="absolute inset-0 w-full h-full object-cover object-center brightness-75 transition-all duration-1000"
+        className="absolute inset-0 w-full h-full object-cover object-center brightness-[0.5] transition-opacity duration-1000"
       />
 
-      <div className="relative z-10 max-w-screen-xl px-4 text-center text-white">
-        <h1 className="mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl xl:text-6xl">
-          Fast and Reliable Delivery Services
+      {/* Dark overlay for contrast */}
+      <div className="absolute inset-0 bg-[#1f1a17]/60 mix-blend-multiply"></div>
+
+      {/* Text Content */}
+      <div className="relative z-10 max-w-4xl px-6 text-center text-white">
+        <h1 className="mb-6 text-4xl md:text-5xl font-extrabold tracking-wide leading-tight">
+          Reliable Delivery, Rooted in Trust.
         </h1>
-        <p className="mb-6 font-light text-lg md:text-xl">
-          From same-day local drop-offs to nationwide logistics, our platform
-          helps businesses and individuals get their packages delivered quickly,
-          safely, and affordably.
+        <p className="mb-8 text-lg md:text-xl font-light text-gray-200">
+          Logistics you can count on — fast, secure, and nationwide. We’re here
+          to make your deliveries smooth and stress-free.
         </p>
 
-        <div className="flex flex-wrap gap-4 justify-center">
+        <div className="flex flex-wrap justify-center gap-4">
           <a
             href="#"
-            className="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300"
+            className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-black bg-[#ffcc00] rounded-lg hover:bg-yellow-400 transition"
           >
-            Get started
+            Get Started
             <svg
-              className="w-5 h-5 ml-2 -mr-1"
+              className="w-5 h-5 ml-2"
               fill="currentColor"
               viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <path
                 fillRule="evenodd"
@@ -50,7 +53,7 @@ const Hero = () => {
           </a>
           <a
             href="/contact"
-            className="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-white border border-white rounded-lg hover:bg-white hover:text-black"
+            className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white border border-white rounded-lg hover:bg-white hover:text-black transition"
           >
             Contact Us
           </a>
@@ -61,6 +64,8 @@ const Hero = () => {
 };
 
 export default Hero;
+
+
 
 
 

@@ -69,6 +69,7 @@ const templateParams = {
   };
 
   return (
+    
     <div className="p-6 max-w-xl mx-auto bg-white shadow rounded-lg">
       <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">Book a Delivery</h2>
       <form onSubmit={handleSubmit} className="space-y-4">

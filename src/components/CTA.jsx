@@ -5,7 +5,7 @@ import { FaTruckMoving } from "react-icons/fa"; // using react-icons (make sure 
 
 const CTA = () => {
   return (
-    <section className="bg-blue-600 text-white py-20 px-6">
+    <section className="bg-[#2e2e2e] text-white py-20 px-6">
       <div className="max-w-3xl mx-auto text-center">
         <div className="flex justify-center mb-6">
           <FaTruckMoving className="text-6xl text-white" />
