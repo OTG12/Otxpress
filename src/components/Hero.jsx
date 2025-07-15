@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 const Hero = () => {
-  const images = ["/Hero1.jpg", "/Hero2.jpg", "/Hero3.jpg"];
+  const images = ["/Hero11.jpeg", "/Hero2.jpg", "/Hero3.jpg"];
   const [currentImage, setCurrentImage] = useState(0);
 
   useEffect(() => {
