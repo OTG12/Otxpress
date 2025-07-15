@@ -1,6 +1,6 @@
 import React from 'react';
 import Ceo from '../assets/Ceo.jpeg';
-import Co1 from '../assets/Co1.jpg';
+import Co1 from '../assets/Co1.jpeg';
 
 const Team = () => {
   const teamMembers = [

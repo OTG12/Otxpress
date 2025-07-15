@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 const Hero = () => {
-  const images = ["/Hero11.jpeg", "/Hero2.jpg", "/Hero3.jpg"];
+  const images = ["/Hero1.jpeg", "/Hero2.jpeg", "/Hero3.jpeg"];
   const [currentImage, setCurrentImage] = useState(0);
 
   useEffect(() => {
@@ -12,7 +12,7 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="relative h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative h-screen pt-[80px] flex items-center justify-center overflow-hidden">
       <img
         src={images[currentImage]}
         alt="Hero background"
@@ -61,6 +61,8 @@ const Hero = () => {
 };
 
 export default Hero;
+
+
 
 
 
