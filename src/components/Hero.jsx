@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
-import Hero1 from "../assets/Hero1.jpg";
-import Hero2 from "../assets/Hero2.jpg";
-import Hero3 from "../assets/Hero3.jpg";
 
 const Hero = () => {
-  const images = [Hero1, Hero2, Hero3];
+  const images = ["/images/Hero1.jpg", "/images/Hero2.jpg", "/images/Hero3.jpg"];
   const [currentImage, setCurrentImage] = useState(0);
 
   useEffect(() => {
@@ -64,6 +61,7 @@ const Hero = () => {
 };
 
 export default Hero;
+
 
 
 
