@@ -35,7 +35,7 @@ const App = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/track" element={<Tracking />} /> 
-          <Route path='bookdelivery' element={<BookDelivery/>}/>
+          <Route path='/bookdelivery' element={<BookDelivery/>}/>
           {/* Add more routes like /track, /book, etc. later */}
         </Routes>
       </main>
