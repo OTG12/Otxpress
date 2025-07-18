@@ -94,8 +94,8 @@ const GallerySlideshow = () => {
   }, []);
 
   return (
-    <section className="px-4 py-16 bg-gray-100">
-      <h2 className="text-3xl font-bold text-center mb-10 text-gray-800">
+    <section className="px-4 py-16 bg-[#0d0d0d]">
+      <h2 className="text-3xl font-bold text-center mb-10 text-red-600">
         Our Services
       </h2>
 

@@ -25,12 +25,15 @@ const Hero = () => {
 
       {/* Text Content */}
       <div className="relative z-10 max-w-4xl px-6 text-center text-white">
-        <h1 className="mb-6 text-4xl md:text-5xl font-extrabold tracking-wide leading-tight">
-          Reliable Delivery, Rooted in Trust.
+        <h1 className="mb-6 text-5xl md:text-5xl font-extrabold tracking-wide leading-tight">
+          Logistics Made Simple!
         </h1>
+         <h3 className="mb-6 text-2xl md:text-2xl font-extrabold tracking-wide leading-tight">
+          Reliable Delivery, Rooted in Trust.
+        </h3>
         <p className="mb-8 text-lg md:text-xl font-light text-gray-200">
-          Logistics you can count on — fast, secure, and nationwide. We’re here
-          to make your deliveries smooth and stress-free.
+          Logistics you can count on fast, secure, and nationwide. We’re here
+          to make your deliveries smooth and stress free.
         </p>
 
         <div className="flex flex-wrap justify-center gap-4">

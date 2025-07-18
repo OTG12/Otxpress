@@ -1,6 +1,7 @@
 import React from 'react'
 import { Truck, LocateFixed, BadgeDollarSign } from "lucide-react";
 
+
 const Features = () => {
   const features = [
     {
@@ -20,9 +21,9 @@ const Features = () => {
     },
   ];
   return (
-  <section className="py-20 px-6 bg-gray-50 text-center">
+  <section className="py-20 px-6 bg-[#0d0d0d] text-center">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-extrabold mb-10 text-gray-800">
+        <h2 className="text-3xl font-extrabold mb-10 text-red-600">
           Why Choose Us
         </h2>
         <div className="grid md:grid-cols-3 gap-8">

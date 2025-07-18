@@ -33,7 +33,7 @@ const Tracking = () => {
           />
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+            className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700"
           >
             Track
           </button>

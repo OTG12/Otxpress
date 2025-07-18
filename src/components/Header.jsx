@@ -5,33 +5,35 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="bg-[#2e2e2e] text-white shadow-md fixed top-0 left-0 w-full z-50">
+    <header className="bg-black text-white shadow-md fixed top-0 left-0 w-full z-50 border-b border-red-700">
       <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         {/* Logo */}
-        <Link to="/" className="text-2xl font-extrabold text-yellow-400">
+        <Link to="/" className="text-2xl font-extrabold text-red-500">
           OTXpress
         </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-6 text-sm font-medium">
-          <Link to="/" className="hover:text-yellow-400">Home</Link>
-          <Link to="/track" className="hover:text-yellow-400">Track</Link>
-          <Link to="/bookdelivery" className="hover:text-yellow-400">Book Delivery</Link>
-          <Link to="/pricing" className="hover:text-yellow-400">Pricing</Link>
-          <Link to="/contact" className="hover:text-yellow-400">Contact</Link>
+          <Link to="/" className="hover:text-red-400 transition-colors">Home</Link>
+          <Link to="/track" className="hover:text-red-400 transition-colors">Track</Link>
+          <Link to="/bookdelivery" className="hover:text-red-400 transition-colors">Book Delivery</Link>
+          <Link to="/pricing" className="hover:text-red-400 transition-colors">Pricing</Link>
+          <Link to="/aboutus" className="hover:text-red-400 transition-colors">AboutUs</Link>
+          <Link to="/contact" className="hover:text-red-400 transition-colors">Contact</Link>
+
         </nav>
 
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex gap-3">
           <Link
             to="/login"
-            className="px-4 py-2 bg-yellow-400 text-black rounded hover:bg-yellow-500 text-sm"
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm transition-all"
           >
             Login
           </Link>
           <Link
             to="/register"
-            className="px-4 py-2 border border-yellow-400 text-yellow-400 rounded hover:bg-yellow-500 hover:text-black text-sm"
+            className="px-4 py-2 border border-red-500 text-red-500 rounded hover:bg-red-600 hover:text-white text-sm transition-all"
           >
             Sign Up
           </Link>
@@ -66,19 +68,20 @@ const Header = () => {
 
       {/* Mobile Dropdown */}
       {isOpen && (
-        <div className="md:hidden px-4 pb-4 bg-[#2e2e2e] border-t border-gray-700">
+        <div className="md:hidden px-4 pb-4 bg-black border-t border-red-700">
           <nav className="flex flex-col gap-4 text-sm">
-            <Link to="/" onClick={() => setIsOpen(false)} className="hover:text-yellow-400">Home</Link>
-            <Link to="/track" onClick={() => setIsOpen(false)} className="hover:text-yellow-400">Track</Link>
-            <Link to="/bookdelivery" onClick={() => setIsOpen(false)} className="hover:text-yellow-400">Book Delivery</Link>
-            <Link to="/pricing" onClick={() => setIsOpen(false)} className="hover:text-yellow-400">Pricing</Link>
-            <Link to="/contact" onClick={() => setIsOpen(false)} className="hover:text-yellow-400">Contact</Link>
-            <hr className="border-gray-600" />
-            <Link to="/login" onClick={() => setIsOpen(false)} className="hover:text-yellow-400">Login</Link>
+            <Link to="/" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Home</Link>
+            <Link to="/track" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Track</Link>
+            <Link to="/bookdelivery" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Book Delivery</Link>
+            <Link to="/pricing" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Pricing</Link>
+            <Link to="/aboutus" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">AboutUs</Link>
+            <Link to="/contact" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Contact</Link>
+            <hr className="border-red-700" />
+            <Link to="/login" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Login</Link>
             <Link
               to="/register"
               onClick={() => setIsOpen(false)}
-              className="text-yellow-400 font-semibold hover:text-yellow-300"
+              className="text-red-400 font-semibold hover:text-red-300 transition-colors"
             >
               Sign Up
             </Link>
@@ -90,5 +93,6 @@ const Header = () => {
 };
 
 export default Header;
+
 
 

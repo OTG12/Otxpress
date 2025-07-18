@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ import useNavigate
+import { useNavigate } from 'react-router-dom';
 import emailjs from '@emailjs/browser';
 
 const BookDelivery = () => {
-  const navigate = useNavigate(); // ✅ initialize navigate
+  const navigate = useNavigate();
 
   useEffect(() => {
     emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
@@ -20,6 +20,8 @@ const BookDelivery = () => {
     packageWeight: '',
     deliveryOption: '',
   });
+
+  const [showModal, setShowModal] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,6 +47,7 @@ const BookDelivery = () => {
     };
 
     try {
+      // Send Email via EmailJS
       await emailjs.send(
         import.meta.env.VITE_EMAILJS_SERVICE_ID,
         import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
@@ -52,7 +55,20 @@ const BookDelivery = () => {
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY
       );
 
-      alert('Delivery booked successfully!');
+      // WhatsApp Message
+      const message = `*DELIVERY BOOKING* 🚚
+📦 From: ${formData.senderName} (${formData.senderPhone})
+📍 Pickup: ${formData.pickupAddress}
+👤 To: ${formData.receiverName} (${formData.receiverPhone})
+📍 Dropoff: ${formData.deliveryAddress}
+📦 Type: ${formData.packageType}, Weight: ${formData.packageWeight}
+🚀 Option: ${formData.deliveryOption}`;
+
+      const encodedMsg = encodeURIComponent(message);
+      window.open(`https://wa.me/2348120013544?text=${encodedMsg}`, '_blank');
+
+      // Show modal
+      setShowModal(true);
       setFormData({
         senderName: '',
         senderPhone: '',
@@ -65,7 +81,11 @@ const BookDelivery = () => {
         deliveryOption: '',
       });
 
-      navigate('/'); // ✅ redirect to homepage
+      // Auto close modal
+      setTimeout(() => {
+        setShowModal(false);
+        navigate('/');
+      }, 4000);
     } catch (error) {
       console.error('EmailJS Error:', error);
       alert('Something went wrong. Please try again later.');
@@ -73,55 +93,77 @@ const BookDelivery = () => {
   };
 
   return (
-    <div className="p-6 max-w-xl mx-auto bg-white shadow rounded-lg">
-      <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">Book a Delivery</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {[
-          { name: 'senderName', placeholder: "Sender's Name" },
-          { name: 'senderPhone', placeholder: "Sender's Phone" },
-          { name: 'pickupAddress', placeholder: 'Pickup Address' },
-          { name: 'receiverName', placeholder: "Receiver's Name" },
-          { name: 'receiverPhone', placeholder: "Receiver's Phone" },
-          { name: 'deliveryAddress', placeholder: 'Delivery Address' },
-          { name: 'packageType', placeholder: 'Package Type (e.g., Fragile)' },
-          { name: 'packageWeight', placeholder: 'Weight (e.g., 2kg)' },
-        ].map(({ name, placeholder }) => (
-          <input
-            key={name}
-            name={name}
-            value={formData[name]}
+    <div className="min-h-screen flex items-center justify-center relative px-4 py-12">
+      {/* Red-black glowing background */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-black via-[#1a0000] to-red-700 opacity-90 -z-10" />
+      <div className="absolute inset-0 backdrop-blur-sm -z-10" />
+
+      {/* Form Box */}
+      <div className="w-full max-w-xl bg-black/60 border border-red-700 rounded-xl shadow-xl p-6 text-white">
+        <h2 className="text-3xl font-bold text-center mb-6">📦 Book a Delivery</h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {[
+            { name: 'senderName', placeholder: "Sender's Name" },
+            { name: 'senderPhone', placeholder: "Sender's Phone" },
+            { name: 'pickupAddress', placeholder: 'Pickup Address' },
+            { name: 'receiverName', placeholder: "Receiver's Name" },
+            { name: 'receiverPhone', placeholder: "Receiver's Phone" },
+            { name: 'deliveryAddress', placeholder: 'Delivery Address' },
+            { name: 'packageType', placeholder: 'Package Type (e.g., Fragile)' },
+            { name: 'packageWeight', placeholder: 'Weight (e.g., 2kg)' },
+          ].map(({ name, placeholder }) => (
+            <input
+              key={name}
+              name={name}
+              value={formData[name]}
+              onChange={handleChange}
+              placeholder={placeholder}
+              required
+              className="w-full p-3 bg-black/30 border border-red-500 placeholder-gray-300 rounded"
+            />
+          ))}
+
+          <select
+            name="deliveryOption"
+            value={formData.deliveryOption}
             onChange={handleChange}
-            placeholder={placeholder}
             required
-            className="w-full p-2 border rounded"
-          />
-        ))}
+            className="w-full p-3 bg-black/30 border border-red-500 text-white rounded"
+          >
+            <option value="">Select Delivery Option</option>
+            <option value="same-day">Same Day</option>
+            <option value="next-day">Next Day</option>
+            <option value="scheduled">Scheduled</option>
+          </select>
 
-        <select
-          name="deliveryOption"
-          value={formData.deliveryOption}
-          onChange={handleChange}
-          required
-          className="w-full p-2 border rounded"
-        >
-          <option value="">Select Delivery Option</option>
-          <option value="same-day">Same Day</option>
-          <option value="next-day">Next Day</option>
-          <option value="scheduled">Scheduled</option>
-        </select>
+          <button
+            type="submit"
+            className="w-full bg-red-500 hover:bg-red-600 text-black font-semibold py-3 px-4 rounded transition"
+          >
+            Book Now
+          </button>
+        </form>
+      </div>
 
-        <button
-          type="submit"
-          className="w-full bg-yellow-400 hover:text-yellow-700 text-black py-2 px-4 rounded"
-        >
-          Book Now
-        </button>
-      </form>
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center transition-opacity duration-300">
+          <div className="bg-white text-black p-8 rounded-lg max-w-sm w-full text-center shadow-2xl animate-fade-in">
+            <h3 className="text-2xl font-bold text-red-600 mb-4">Delivery Booked!</h3>
+            <p className="mb-4">We've sent your request to both WhatsApp and Email 📩</p>
+            <p className="text-sm text-gray-700">You’ll be redirected shortly...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default BookDelivery;
+
+
+
 
 
 

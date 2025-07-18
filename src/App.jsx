@@ -11,6 +11,8 @@ import Tracking from './pages/Tracking'
 import BookDelivery from './pages/BookDelivery'
 import Team from './components/Team'
 import GallerySlideshow from './components/GallerySlideshow'
+import PricingPage from './pages/Pricing'
+import AboutUs from './pages/AboutUs'
 
 
 
@@ -30,12 +32,14 @@ const App = () => {
   return (
     <>
       <Header />
-      <main className="pt-20">
+      <main >
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/contact" element={<Contact />} />
+          <Route path="/contact" element={<Contact />}  />
           <Route path="/track" element={<Tracking />} /> 
-          <Route path='/bookdelivery' element={<BookDelivery/>}/>
+          <Route path='/bookdelivery' element={<BookDelivery/>} />
+           <Route path='/pricing' element={<PricingPage/>}/>
+           <Route path='/aboutus' element={<AboutUs/>}/>
           {/* Add more routes like /track, /book, etc. later */}
         </Routes>
       </main>
