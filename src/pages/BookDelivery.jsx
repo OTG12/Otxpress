@@ -23,6 +23,7 @@ const BookDelivery = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // NEW loading state
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,6 +35,7 @@ const BookDelivery = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true); // Show loader
 
     const templateParams = {
       sender_name: formData.senderName,
@@ -57,7 +59,7 @@ const BookDelivery = () => {
 
     const encodedMsg = encodeURIComponent(message);
     const whatsappURL = `https://wa.me/2348120013544?text=${encodedMsg}`;
-    setWhatsappLink(whatsappURL); // Store the WhatsApp link for modal
+    setWhatsappLink(whatsappURL);
 
     try {
       await emailjs.send(
@@ -67,7 +69,6 @@ const BookDelivery = () => {
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY
       );
 
-      setShowModal(true);
       setFormData({
         senderName: '',
         senderPhone: '',
@@ -80,13 +81,17 @@ const BookDelivery = () => {
         deliveryOption: '',
       });
 
+      setShowModal(true);
+      setIsLoading(false);
+
       setTimeout(() => {
         setShowModal(false);
         navigate('/');
       }, 6000);
     } catch (error) {
       console.error('EmailJS Error:', error);
-      alert('Something went wrong. Please try again later.');
+      setIsLoading(false);
+      alert('Something went wrong. Please try again.');
     }
   };
 
@@ -137,14 +142,27 @@ const BookDelivery = () => {
 
           <button
             type="submit"
-            className="w-full bg-red-500 hover:bg-red-600 text-black font-semibold py-3 px-4 rounded transition"
+            disabled={isLoading}
+            className={`w-full ${
+              isLoading ? 'bg-gray-500' : 'bg-red-500 hover:bg-red-600'
+            } text-black font-semibold py-3 px-4 rounded transition`}
           >
-            Book Now
+            {isLoading ? 'Booking...' : 'Book Now'}
           </button>
         </form>
       </div>
 
-      {/* Modal */}
+      {/* Loading Spinner */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-12 w-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-white text-lg">Processing your booking...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-white text-black p-8 rounded-lg max-w-sm w-full text-center shadow-2xl">
@@ -167,6 +185,7 @@ const BookDelivery = () => {
 };
 
 export default BookDelivery;
+
 
 
 
