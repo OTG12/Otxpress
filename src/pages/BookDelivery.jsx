@@ -67,6 +67,7 @@ const BookDelivery = () => {
       const encodedMsg = encodeURIComponent(message);
       window.open(`https://wa.me/2348120013544?text=${encodedMsg}`, '_blank');
 
+
       // Show modal
       setShowModal(true);
       setFormData({
