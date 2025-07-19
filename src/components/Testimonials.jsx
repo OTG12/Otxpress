@@ -1,4 +1,7 @@
 import React from "react";
+import TM1 from '../assets/TM1.jpeg';
+import TM3 from '../assets/TM3.jpg';
+import TM2 from '../assets/TM2.jpg';
 import { StarIcon } from "@heroicons/react/24/solid"; // Optional: requires Heroicons installed
 
 const testimonials = [
@@ -6,21 +9,21 @@ const testimonials = [
     name: "Ada",
     location: "Lagos",
     message: "Super fast delivery! I use this service weekly and they never disappoint.",
-    image: "https://images.app.goo.gl/6KEMXiCBALKmfC366",
+    image: TM1,
     rating: 5,
   },
   {
     name: "Chinedu",
     location: "Abuja",
     message: "The tracking feature is a big help. I always know where my package is.",
-    image: "https://images.app.goo.gl/snszvnpuGbKXSZqZA",
+    image: TM2,
     rating: 4,
   },
   {
     name: "Zainab",
     location: "Port Harcourt",
     message: "Affordable and reliable. Great customer service too!",
-    image: "https://images.app.goo.gl/CDXP6s4PKBMXMPjx9",
+    image: TM3,
     rating: 5,
   },
 ];
