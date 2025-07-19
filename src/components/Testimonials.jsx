@@ -1,7 +1,7 @@
 import React from "react";
 import TM1 from '../assets/TM1.jpeg';
-import TM3 from '../assets/TM3.jpg';
-import TM2 from '../assets/TM2.jpg';
+import TM3 from '../assets/TM3.jpeg';
+import TM2 from '../assets/TM2.jpeg';
 import { StarIcon } from "@heroicons/react/24/solid"; // Optional: requires Heroicons installed
 
 const testimonials = [
