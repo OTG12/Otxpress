@@ -32,7 +32,7 @@ const Team = () => {
           <div className="text-left max-w-xl mx-auto">
             <h3 className="text-2xl font-semibold text-red-600 mb-3">Driven by Purpose</h3>
             <p className="mb-4 text-gray-400 leading-relaxed">
-              At the core of our mission is a simple but powerful idea — to redefine last-mile delivery
+              At the core of our mission is a simple but powerful idea to redefine last mile delivery
               with unmatched efficiency and heart. With years of logistics experience and a vision to empower businesses,
               Otene leads the charge in transforming local delivery into a smooth, reliable, and smart experience.
             </p>
