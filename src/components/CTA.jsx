@@ -1,6 +1,6 @@
 import React from "react";
 import { FaTruckMoving } from "react-icons/fa";
-import DeliveryImg from "../assets/delivery-cta.jpg"; // Make sure this path is correct
+import DeliveryImg from "../assets/delivery-cta.jpeg"; // Make sure this path is correct
 
 const CTA = () => {
   return (
