@@ -9,23 +9,33 @@ const Header = () => {
     <header className="bg-black text-white shadow-md fixed top-0 left-0 w-full z-50 border-b border-red-700">
       <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center h-16">
         {/* Logo Image - bigger without increasing header height */}
-        <a className="block h-40 xl:mr-8 overflow-hidden" href="#hero">
-          <img
-            src={Logo}
-            alt="OTxpress"
-            className="h-full w-auto scale-110" // makes logo bigger
-          />
-          
+        <a className="block h-40 -ml-2 xl:mr-8 overflow-hidden">
+          <img src={Logo} alt="OTxpress" className="h-full w-auto scale-125" />
         </a>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-6 text-sm font-medium">
-          <Link to="/" className="hover:text-red-400 transition-colors">Home</Link>
-          <Link to="/track" className="hover:text-red-400 transition-colors">Track</Link>
-          <Link to="/bookdelivery" className="hover:text-red-400 transition-colors">Book Delivery</Link>
-          <Link to="/pricing" className="hover:text-red-400 transition-colors">Pricing</Link>
-          <Link to="/aboutus" className="hover:text-red-400 transition-colors">AboutUs</Link>
-          <Link to="/contact" className="hover:text-red-400 transition-colors">Contact</Link>
+          <Link to="/" className="hover:text-red-400 transition-colors">
+            Home
+          </Link>
+          <Link to="/track" className="hover:text-red-400 transition-colors">
+            Track
+          </Link>
+          <Link
+            to="/bookdelivery"
+            className="hover:text-red-400 transition-colors"
+          >
+            Book Delivery
+          </Link>
+          <Link to="/pricing" className="hover:text-red-400 transition-colors">
+            Pricing
+          </Link>
+          <Link to="/aboutus" className="hover:text-red-400 transition-colors">
+            AboutUs
+          </Link>
+          <Link to="/contact" className="hover:text-red-400 transition-colors">
+            Contact
+          </Link>
         </nav>
 
         {/* Desktop Auth Buttons */}
@@ -72,12 +82,48 @@ const Header = () => {
       {isOpen && (
         <div className="md:hidden px-4 pb-4 bg-black border-t border-red-700">
           <nav className="flex flex-col gap-4 text-sm">
-            <Link to="/" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Home</Link>
-            <Link to="/track" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Track</Link>
-            <Link to="/bookdelivery" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Book Delivery</Link>
-            <Link to="/pricing" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Pricing</Link>
-            <Link to="/aboutus" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">AboutUs</Link>
-            <Link to="/contact" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Contact</Link>
+            <Link
+              to="/"
+              onClick={() => setIsOpen(false)}
+              className="hover:text-red-400 transition-colors"
+            >
+              Home
+            </Link>
+            <Link
+              to="/track"
+              onClick={() => setIsOpen(false)}
+              className="hover:text-red-400 transition-colors"
+            >
+              Track
+            </Link>
+            <Link
+              to="/bookdelivery"
+              onClick={() => setIsOpen(false)}
+              className="hover:text-red-400 transition-colors"
+            >
+              Book Delivery
+            </Link>
+            <Link
+              to="/pricing"
+              onClick={() => setIsOpen(false)}
+              className="hover:text-red-400 transition-colors"
+            >
+              Pricing
+            </Link>
+            <Link
+              to="/aboutus"
+              onClick={() => setIsOpen(false)}
+              className="hover:text-red-400 transition-colors"
+            >
+              AboutUs
+            </Link>
+            <Link
+              to="/contact"
+              onClick={() => setIsOpen(false)}
+              className="hover:text-red-400 transition-colors"
+            >
+              Contact
+            </Link>
             <hr className="border-red-700" />
             {/* <Link to="/login" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Login</Link>
             <Link
@@ -95,9 +141,3 @@ const Header = () => {
 };
 
 export default Header;
-
-
-
-
-
-
