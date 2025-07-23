@@ -1,16 +1,22 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import Logo from "../assets/Logo.jpeg"; // make sure this path is correct
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <header className="bg-black text-white shadow-md fixed top-0 left-0 w-full z-50 border-b border-red-700">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-        {/* Logo */}
-        <Link to="/" className="text-2xl font-extrabold text-red-500">
-          OTXpress
-        </Link>
+      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center h-16">
+        {/* Logo Image - bigger without increasing header height */}
+        <a className="block h-40 xl:mr-8 overflow-hidden" href="#hero">
+          <img
+            src={Logo}
+            alt="OTxpress"
+            className="h-full w-auto scale-110" // makes logo bigger
+          />
+          
+        </a>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-6 text-sm font-medium">
@@ -20,11 +26,10 @@ const Header = () => {
           <Link to="/pricing" className="hover:text-red-400 transition-colors">Pricing</Link>
           <Link to="/aboutus" className="hover:text-red-400 transition-colors">AboutUs</Link>
           <Link to="/contact" className="hover:text-red-400 transition-colors">Contact</Link>
-
         </nav>
 
         {/* Desktop Auth Buttons */}
-        <div className="hidden md:flex gap-3">
+        {/* <div className="hidden md:flex gap-3">
           <Link
             to="/login"
             className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm transition-all"
@@ -37,7 +42,7 @@ const Header = () => {
           >
             Sign Up
           </Link>
-        </div>
+        </div> */}
 
         {/* Hamburger Button */}
         <button
@@ -45,10 +50,7 @@ const Header = () => {
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Toggle menu"
         >
-          <svg
-            className="w-6 h-6 fill-current text-white"
-            viewBox="0 0 20 20"
-          >
+          <svg className="w-6 h-6 fill-current text-white" viewBox="0 0 20 20">
             {isOpen ? (
               <path
                 fillRule="evenodd"
@@ -77,14 +79,14 @@ const Header = () => {
             <Link to="/aboutus" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">AboutUs</Link>
             <Link to="/contact" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Contact</Link>
             <hr className="border-red-700" />
-            <Link to="/login" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Login</Link>
+            {/* <Link to="/login" onClick={() => setIsOpen(false)} className="hover:text-red-400 transition-colors">Login</Link>
             <Link
               to="/register"
               onClick={() => setIsOpen(false)}
               className="text-red-400 font-semibold hover:text-red-300 transition-colors"
             >
               Sign Up
-            </Link>
+            </Link> */}
           </nav>
         </div>
       )}
@@ -93,6 +95,9 @@ const Header = () => {
 };
 
 export default Header;
+
+
+
 
 
 
