@@ -287,7 +287,7 @@ const BookDelivery = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12  mt-[160px] md:mt-[64px]">
       {/* Form Box */}
       <div className="w-full max-w-xl bg-black border border-red-700 rounded-xl shadow-xl p-6 text-red-500">
         <h2 className="text-3xl font-bold text-center mb-6">📦 Book a Delivery</h2>

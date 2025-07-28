@@ -19,7 +19,7 @@ const Tracking = () => {
   };
 
   return (
-    <div className="pt-20 px-4 pb-16 bg-gray-50 min-h-screen">
+    <div className="pt-20 px-4 pb-16 bg-gray-50 min-h-screen  mt-[160px] md:mt-[64px]">
       <div className="max-w-xl mx-auto bg-white shadow-md p-6 rounded">
         <h1 className="text-2xl font-bold mb-4 text-center">Track Your Package</h1>
         <form onSubmit={handleTrack} className="space-y-4">
