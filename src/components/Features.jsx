@@ -60,7 +60,7 @@ const Features = () => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group relative p-8 bg-gray-900 rounded-xl shadow-lg hover:bg-gray-800 transition-all duration-300 overflow-hidden"
+              className="group relative p-8 bg-white rounded-xl shadow-lg hover:bg-gray-200 transition-all duration-300 overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
               <div className="relative z-10 flex flex-col items-center text-center">
