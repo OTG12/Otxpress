@@ -76,7 +76,7 @@ import Logo from '../assets/Logo.jpeg';
 
 const AboutUs = () => {
   return (
-    <section className="bg-black text-red-500 min-h-screen w-full py-20 px-4 sm:px-6 lg:px-8 flex items-center  mt-[160px] md:mt-[64px]">
+    <section className="bg-black text-red-500 min-h-screen w-full py-20 px-4 sm:px-6 lg:px-8 flex items-center  mt-[60px] md:mt-[64px]">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center w-full">
         
         {/* Left - Text Content */}

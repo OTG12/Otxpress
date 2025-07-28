@@ -30,7 +30,7 @@ const plans = [
 
 const PricingPage = () => {
   return (
-    <section className="relative min-h-screen py-20 px-6 text-white  mt-[160px] md:mt-[64px] overflow-hidden">
+    <section className="relative min-h-screen py-20 px-6 text-white  mt-[60px] md:mt-[64px] overflow-hidden">
       {/* Red & Black background */}
       <div className="absolute inset-0 bg-gradient-to-tr from-black via-[#1a0000] to-red-700 opacity-90 -z-10" />
       <div className="absolute inset-0 backdrop-blur-sm -z-10" />

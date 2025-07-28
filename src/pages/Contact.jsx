@@ -63,7 +63,7 @@ import React from 'react';
 
 const Contact = () => {
   return (
-    <div className="pt-20 px-4 pb-16 bg-black min-h-screen text-red-500  mt-[160px] md:mt-[64px]">
+    <div className="pt-20 px-4 pb-16 bg-black min-h-screen text-red-500  mt-[60px] md:mt-[64px]">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-6">Contact Us</h1>
         <p className="text-center text-red-400 mb-12">
