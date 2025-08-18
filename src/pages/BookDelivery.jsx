@@ -188,7 +188,6 @@
 
 
 
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import emailjs from '@emailjs/browser';
@@ -253,6 +252,7 @@ const BookDelivery = () => {
     setWhatsappLink(whatsappURL);
 
     try {
+      // 1. Send email notification with EmailJS
       await emailjs.send(
         import.meta.env.VITE_EMAILJS_SERVICE_ID,
         import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
@@ -260,6 +260,14 @@ const BookDelivery = () => {
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY
       );
 
+      // 2. Save booking into your Django backend
+      await fetch("http://127.0.0.1:8000/api/bookings/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      // 3. Reset form and show success modal
       setFormData({
         senderName: '',
         senderPhone: '',
@@ -280,14 +288,14 @@ const BookDelivery = () => {
         navigate('/');
       }, 6000);
     } catch (error) {
-      console.error('EmailJS Error:', error);
+      console.error('Booking Error:', error);
       setIsLoading(false);
       alert('Something went wrong. Please try again.');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12  mt-[60px] md:mt-[64px]">
+    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12 mt-[60px] md:mt-[64px]">
       {/* Form Box */}
       <div className="w-full max-w-xl bg-black border border-red-700 rounded-xl shadow-xl p-6 text-red-500">
         <h2 className="text-3xl font-bold text-center mb-6">📦 Book a Delivery</h2>
@@ -354,7 +362,7 @@ const BookDelivery = () => {
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-black border border-red-700 p-8 rounded-lg max-w-sm w-full text-center shadow-2xl">
             <h3 className="text-2xl font-bold text-red-500 mb-4">Delivery Booked!</h3>
-            <p className="mb-2 text-red-400">✅ Your request has been sent via Email.</p>
+            <p className="mb-2 text-red-400">✅ Your request has been saved and sent via Email.</p>
             <a
               href={whatsappLink}
               target="_blank"
