@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import emailjs from '@emailjs/browser';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import emailjs from "@emailjs/browser";
 
-const BookDelivery = () => {
+const BookingPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    senderName: '',
-    senderEmail: '',
-    senderPhone: '',
-    pickupAddress: '',
-    receiverName: '',
-    receiverPhone: '',
-    deliveryAddress: '',
-    packageType: '',
-    packageWeight: '',
-    deliveryOption: 'standard',
+    senderName: "",
+    senderEmail: "",
+    senderPhone: "",
+    pickupAddress: "",
+    receiverName: "",
+    receiverPhone: "",
+    deliveryAddress: "",
+    packageType: "",
+    packageWeight: "",
+    deliveryOption: "standard",
   });
   const [showModal, setShowModal] = useState(false);
   const [trackingInfo, setTrackingInfo] = useState(null);
@@ -26,7 +26,7 @@ const BookDelivery = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -34,10 +34,10 @@ const BookDelivery = () => {
     setIsLoading(true);
 
     try {
-      // Send booking to backend
-      const response = await fetch('http://127.0.0.1:8000/api/bookings/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      // Send booking to Django API
+      const response = await fetch("http://127.0.0.1:8000/dispatch/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sender_name: formData.senderName,
           sender_email: formData.senderEmail,
@@ -53,10 +53,10 @@ const BookDelivery = () => {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Booking failed');
+      if (!response.ok) throw new Error(data.message || "Booking failed");
 
-      // Prepare WhatsApp message
-      const whatsappMessage = `*NEW DELIVERY BOOKING*%0A%0A📦 From: ${formData.senderName} (${formData.senderPhone})%0A📍 Pickup: ${formData.pickupAddress}%0A👤 To: ${formData.receiverName} (${formData.receiverPhone})%0A📍 Delivery: ${formData.deliveryAddress}%0A📦 Package: ${formData.packageType}, ${formData.packageWeight}%0A🚚 Option: ${formData.deliveryOption.replace('_', ' ')}%0A🔢 Tracking #: ${data.tracking_number}`;
+      // WhatsApp message
+      const whatsappMessage = `*NEW DELIVERY BOOKING*%0A%0A📦 From: ${formData.senderName} (${formData.senderPhone})%0A📍 Pickup: ${formData.pickupAddress}%0A👤 To: ${formData.receiverName} (${formData.receiverPhone})%0A📍 Delivery: ${formData.deliveryAddress}%0A📦 Package: ${formData.packageType}, ${formData.packageWeight}%0A🚚 Option: ${formData.deliveryOption.replace("_", " ")}%0A🔢 Tracking #: ${data.tracking_number}`;
 
       const whatsappURL = `https://api.whatsapp.com/send?phone=2348120013544&text=${whatsappMessage}`;
 
@@ -75,34 +75,37 @@ const BookDelivery = () => {
 
       setTrackingInfo({
         number: data.tracking_number,
-        whatsappLink: whatsappURL
+        whatsappLink: whatsappURL,
       });
       setShowModal(true);
       setIsLoading(false);
 
       // Reset form
       setFormData({
-        senderName: '',
-        senderEmail: '',
-        senderPhone: '',
-        pickupAddress: '',
-        receiverName: '',
-        receiverPhone: '',
-        deliveryAddress: '',
-        packageType: '',
-        packageWeight: '',
-        deliveryOption: 'standard',
+        senderName: "",
+        senderEmail: "",
+        senderPhone: "",
+        pickupAddress: "",
+        receiverName: "",
+        receiverPhone: "",
+        deliveryAddress: "",
+        packageType: "",
+        packageWeight: "",
+        deliveryOption: "standard",
       });
-
     } catch (error) {
-      console.error('Booking error:', error);
+      console.error("Booking error:", error);
       setIsLoading(false);
-      alert(error.message || 'Failed to book delivery. Please try again.');
+      alert(error.message || "Failed to book delivery. Please try again.");
     }
   };
 
   const handleWhatsAppClick = (e) => {
-    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    if (
+      /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      )
+    ) {
       window.location.href = trackingInfo.whatsappLink;
       e.preventDefault();
     }
@@ -110,26 +113,28 @@ const BookDelivery = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12 sm:py-24">
-      {/* Form Container */}
+      {/* Booking Form */}
       <div className="w-full max-w-md sm:max-w-xl bg-black border border-red-700 rounded-xl shadow-xl p-6 text-red-500">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6">📦 Book a Delivery</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6">
+          📦 Book a Delivery
+        </h2>
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           {[
-            { name: 'senderName', placeholder: "Sender's Name" },
-            { name: 'senderEmail', placeholder: "Sender's Email", type: 'email' },
-            { name: 'senderPhone', placeholder: "Sender's Phone", type: 'tel' },
-            { name: 'pickupAddress', placeholder: 'Pickup Address', type: 'text' },
-            { name: 'receiverName', placeholder: "Receiver's Name" },
-            { name: 'receiverPhone', placeholder: "Receiver's Phone", type: 'tel' },
-            { name: 'deliveryAddress', placeholder: 'Delivery Address' },
-            { name: 'packageType', placeholder: 'Package Type (e.g., Fragile)' },
-            { name: 'packageWeight', placeholder: 'Weight (e.g., 2kg)' },
+            { name: "senderName", placeholder: "Sender's Name" },
+            { name: "senderEmail", placeholder: "Sender's Email", type: "email" },
+            { name: "senderPhone", placeholder: "Sender's Phone", type: "tel" },
+            { name: "pickupAddress", placeholder: "Pickup Address", type: "text" },
+            { name: "receiverName", placeholder: "Receiver's Name" },
+            { name: "receiverPhone", placeholder: "Receiver's Phone", type: "tel" },
+            { name: "deliveryAddress", placeholder: "Delivery Address" },
+            { name: "packageType", placeholder: "Package Type (e.g., Fragile)" },
+            { name: "packageWeight", placeholder: "Weight (e.g., 2kg)" },
           ].map((field) => (
             <input
               key={field.name}
               name={field.name}
-              type={field.type || 'text'}
+              type={field.type || "text"}
               value={formData[field.name]}
               onChange={handleChange}
               placeholder={field.placeholder}
@@ -155,38 +160,36 @@ const BookDelivery = () => {
             type="submit"
             disabled={isLoading}
             className={`w-full text-sm sm:text-base ${
-              isLoading ? 'bg-gray-800' : 'bg-red-500 hover:bg-red-600'
+              isLoading ? "bg-gray-800" : "bg-red-500 hover:bg-red-600"
             } text-black font-semibold py-2 sm:py-3 px-4 rounded transition`}
           >
-            {isLoading ? 'Processing...' : 'Book Delivery'}
+            {isLoading ? "Processing..." : "Book Delivery"}
           </button>
         </form>
       </div>
-
-      {/* Loading Spinner */}
-      {isLoading && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3 sm:gap-4">
-            <div className="h-10 w-10 sm:h-12 sm:w-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-red-500 text-sm sm:text-lg">Processing your booking...</p>
-          </div>
-        </div>
-      )}
 
       {/* Success Modal */}
       {showModal && trackingInfo && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-black border border-red-700 p-6 sm:p-8 rounded-lg w-full max-w-xs sm:max-w-sm text-center shadow-2xl">
-            <h3 className="text-xl sm:text-2xl font-bold text-red-500 mb-3 sm:mb-4">Booking Confirmed!</h3>
-            <p className="mb-3 sm:mb-4 text-sm sm:text-base text-red-400">Your delivery has been scheduled.</p>
-            
+            <h3 className="text-xl sm:text-2xl font-bold text-red-500 mb-3 sm:mb-4">
+              Booking Confirmed!
+            </h3>
+            <p className="mb-3 sm:mb-4 text-sm sm:text-base text-red-400">
+              Your delivery has been scheduled.
+            </p>
+
             <div className="bg-black border border-red-500 p-2 sm:p-3 mb-3 sm:mb-4 rounded">
               <p className="text-red-500 text-sm sm:text-lg">Tracking Number:</p>
-              <p className="text-red-500 font-bold text-base sm:text-xl">{trackingInfo.number}</p>
+              <p className="text-red-500 font-bold text-base sm:text-xl">
+                {trackingInfo.number}
+              </p>
             </div>
 
-            <p className="mb-3 sm:mb-4 text-sm sm:text-base text-red-400">Details sent to your email.</p>
-            
+            <p className="mb-3 sm:mb-4 text-sm sm:text-base text-red-400">
+              Details sent to your email.
+            </p>
+
             <a
               href={trackingInfo.whatsappLink}
               onClick={handleWhatsAppClick}
@@ -196,11 +199,11 @@ const BookDelivery = () => {
             >
               💬 Chat on WhatsApp
             </a>
-            
+
             <button
               onClick={() => {
                 setShowModal(false);
-                navigate('/');
+                navigate("/");
               }}
               className="w-full text-sm sm:text-base bg-black border border-red-500 text-red-500 px-4 py-2 rounded hover:bg-red-900 transition"
             >
@@ -213,4 +216,4 @@ const BookDelivery = () => {
   );
 };
 
-export default BookDelivery;
+export default BookingPage;
