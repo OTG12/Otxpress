@@ -114,22 +114,22 @@ const DispatchTracker = () => {
             </Link>
             
             {/* Search Section */}
-         <div className="flex flex-col md:flex-row justify-center items-center gap-3 md:gap-4 w-full md:w-auto md:flex-1 md:mx-4">
-  <input 
-    type="text" 
-    id="trackingInput"
-    className="px-4 py-2 md:py-3 border-2 border-gray-200 rounded-lg text-base w-full md:min-w-[250px] focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all text-gray-900 bg-white"
-    placeholder="Enter tracking ID (e.g., TRK-A6GARII3)"
-    value={trackingId}
-    onChange={(e) => setTrackingId(e.target.value)}
-  />
-  <button 
-    onClick={searchDispatch} 
-    className="bg-red-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg text-base w-full md:w-auto hover:bg-red-700 active:translate-y-[1px] transition-all"
-  >
-    Track Package
-  </button>
-</div>
+            <div className="flex flex-col md:flex-row justify-center items-center gap-3 md:gap-4 w-full md:w-auto md:flex-1 md:mx-4">
+              <input 
+                type="text" 
+                id="trackingInput"
+                className="px-4 py-2 md:py-3 border-2 border-gray-200 rounded-lg text-base w-full md:min-w-[250px] focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all text-gray-900 bg-white"
+                placeholder="Enter tracking ID (e.g., TRK-A6GARII3)"
+                value={trackingId}
+                onChange={(e) => setTrackingId(e.target.value)}
+              />
+              <button 
+                onClick={searchDispatch} 
+                className="bg-red-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg text-base w-full md:w-auto hover:bg-red-700 active:translate-y-[1px] transition-all"
+              >
+                Track Package
+              </button>
+            </div>
             
             {/* Home Button - Hidden on mobile, shown on desktop */}
             <Link 
@@ -163,6 +163,18 @@ const DispatchTracker = () => {
           <div className="bg-red-100 text-red-800 py-4 px-5 rounded-lg text-center">
             <h3 className="text-lg font-semibold">⚠️ {error}</h3>
             <p className="mt-1">Please check your tracking ID and try again.</p>
+          </div>
+        )}
+        
+        {!loading && !error && !dispatchData && (
+          <div className="text-center py-10">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Track Your Package</h2>
+            <p className="text-gray-600">Enter your tracking ID above to see the status of your delivery</p>
           </div>
         )}
         
