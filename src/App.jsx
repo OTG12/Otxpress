@@ -8,7 +8,6 @@ import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import Contact from "./pages/Contact";
-import Tracking from "./pages/Tracking";
 import BookDelivery from "./pages/BookDelivery";
 import Team from "./components/Team";
 import GallerySlideshow from "./components/GallerySlideshow";
@@ -18,6 +17,7 @@ import AboutUs from "./pages/AboutUs";
 import RiderLogin from "./pages/rider/Login";
 import RiderSignup from "./pages/rider/Signup";
 import RiderDashboard from "./pages/rider/Dashboard";
+import DispatchTracker from "./pages/DispatchTracker";
 
 const HomePage = () => (
   <>
@@ -42,7 +42,7 @@ const App = () => {
           {/* Public site */}
           <Route path="/" element={<HomePage />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/track" element={<Tracking />} />
+          <Route path="/dispatchtracker" element={<DispatchTracker/>} />
           <Route path="/bookdelivery" element={<BookDelivery />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/aboutus" element={<AboutUs />} />

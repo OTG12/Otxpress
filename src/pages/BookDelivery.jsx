@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import emailjs from "@emailjs/browser";
+import { useState } from "react";
 
 const BookingPage = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     senderName: "",
     senderEmail: "",
@@ -15,14 +12,12 @@ const BookingPage = () => {
     packageType: "",
     packageWeight: "",
     deliveryOption: "standard",
+    totalCost: "",
   });
-  const [showModal, setShowModal] = useState(false);
-  const [trackingInfo, setTrackingInfo] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
-  }, []);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,54 +26,54 @@ const BookingPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoading(true);
+    setError("");
+    setSuccess("");
 
     try {
-      // Send booking to Django API
-      const response = await fetch("http://127.0.0.1:8000/dispatch/", {
+      const payload = {
+        client: "3fa85f64-5717-4562-b3fc-2c963f66afa6", // Replace with actual client UUID
+        rider: {
+          username: "demo_rider",
+          email: "rider@example.com",
+          latitude: "6.5244", // Lagos sample
+          longitude: "3.3792",
+        },
+        package_ids: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"], // Replace with actual package IDs
+        total_cost: formData.totalCost || "1000",
+        sender_name: formData.senderName,
+        sender_email: formData.senderEmail,
+        recipient_name: formData.receiverName,
+        sender_phone_number: formData.senderPhone,
+        pickup_location: {
+          address: formData.pickupAddress,
+          latitude: "6.5244",
+          longitude: "3.3792",
+        },
+        pickup_location_id: 0,
+        destination_location: {
+          address: formData.deliveryAddress,
+          latitude: "6.465422",
+          longitude: "3.406448",
+        },
+        destination_location_id: 0,
+        destination_phone_number: formData.receiverPhone,
+        status: "PACKING",
+        payment_status: false,
+        duration: formData.deliveryOption,
+      };
+
+      const res = await fetch("http://127.0.0.1:8000/dispatch/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sender_name: formData.senderName,
-          sender_email: formData.senderEmail,
-          sender_phone: formData.senderPhone,
-          pickup_address: formData.pickupAddress,
-          receiver_name: formData.receiverName,
-          receiver_phone: formData.receiverPhone,
-          delivery_address: formData.deliveryAddress,
-          package_type: formData.packageType,
-          package_weight: formData.packageWeight,
-          delivery_option: formData.deliveryOption,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Booking failed");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Failed to create booking");
 
-      // WhatsApp message
-      const whatsappMessage = `*NEW DELIVERY BOOKING*%0A%0A📦 From: ${formData.senderName} (${formData.senderPhone})%0A📍 Pickup: ${formData.pickupAddress}%0A👤 To: ${formData.receiverName} (${formData.receiverPhone})%0A📍 Delivery: ${formData.deliveryAddress}%0A📦 Package: ${formData.packageType}, ${formData.packageWeight}%0A🚚 Option: ${formData.deliveryOption.replace("_", " ")}%0A🔢 Tracking #: ${data.tracking_number}`;
-
-      const whatsappURL = `https://api.whatsapp.com/send?phone=2348120013544&text=${whatsappMessage}`;
-
-      // Send email notification
-      await emailjs.send(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-        {
-          ...formData,
-          tracking_number: data.tracking_number,
-          tracking_link: `${window.location.origin}/track/${data.tracking_number}`,
-          booking_date: new Date().toLocaleDateString(),
-        },
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-      );
-
-      setTrackingInfo({
-        number: data.tracking_number,
-        whatsappLink: whatsappURL,
-      });
-      setShowModal(true);
-      setIsLoading(false);
+      setSuccess(`✅ Booking successful! Tracking ID: ${data.tracking_id}`);
+      console.log("Booking response:", data);
 
       // Reset form
       setFormData({
@@ -92,128 +87,136 @@ const BookingPage = () => {
         packageType: "",
         packageWeight: "",
         deliveryOption: "standard",
+        totalCost: "",
       });
-    } catch (error) {
-      console.error("Booking error:", error);
-      setIsLoading(false);
-      alert(error.message || "Failed to book delivery. Please try again.");
-    }
-  };
-
-  const handleWhatsAppClick = (e) => {
-    if (
-      /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      )
-    ) {
-      window.location.href = trackingInfo.whatsappLink;
-      e.preventDefault();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12 sm:py-24">
-      {/* Booking Form */}
-      <div className="w-full max-w-md sm:max-w-xl bg-black border border-red-700 rounded-xl shadow-xl p-6 text-red-500">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6">
-          📦 Book a Delivery
-        </h2>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-lg rounded-lg p-6 w-full max-w-lg space-y-4"
+      >
+        <h2 className="text-xl font-bold text-center">📦 Create Booking</h2>
+        {error && <p className="text-red-500">{error}</p>}
+        {success && <p className="text-green-600">{success}</p>}
 
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-          {[
-            { name: "senderName", placeholder: "Sender's Name" },
-            { name: "senderEmail", placeholder: "Sender's Email", type: "email" },
-            { name: "senderPhone", placeholder: "Sender's Phone", type: "tel" },
-            { name: "pickupAddress", placeholder: "Pickup Address", type: "text" },
-            { name: "receiverName", placeholder: "Receiver's Name" },
-            { name: "receiverPhone", placeholder: "Receiver's Phone", type: "tel" },
-            { name: "deliveryAddress", placeholder: "Delivery Address" },
-            { name: "packageType", placeholder: "Package Type (e.g., Fragile)" },
-            { name: "packageWeight", placeholder: "Weight (e.g., 2kg)" },
-          ].map((field) => (
-            <input
-              key={field.name}
-              name={field.name}
-              type={field.type || "text"}
-              value={formData[field.name]}
-              onChange={handleChange}
-              placeholder={field.placeholder}
-              required
-              className="w-full p-2 sm:p-3 text-sm sm:text-base bg-black border border-red-500 text-red-500 placeholder-red-400 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-          ))}
+        <input
+          type="text"
+          name="senderName"
+          placeholder="Sender Name"
+          value={formData.senderName}
+          onChange={handleChange}
+          required
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="email"
+          name="senderEmail"
+          placeholder="Sender Email"
+          value={formData.senderEmail}
+          onChange={handleChange}
+          required
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="tel"
+          name="senderPhone"
+          placeholder="Sender Phone"
+          value={formData.senderPhone}
+          onChange={handleChange}
+          required
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="text"
+          name="pickupAddress"
+          placeholder="Pickup Address"
+          value={formData.pickupAddress}
+          onChange={handleChange}
+          required
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="text"
+          name="receiverName"
+          placeholder="Receiver Name"
+          value={formData.receiverName}
+          onChange={handleChange}
+          required
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="tel"
+          name="receiverPhone"
+          placeholder="Receiver Phone"
+          value={formData.receiverPhone}
+          onChange={handleChange}
+          required
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="text"
+          name="deliveryAddress"
+          placeholder="Delivery Address"
+          value={formData.deliveryAddress}
+          onChange={handleChange}
+          required
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="text"
+          name="packageType"
+          placeholder="Package Type"
+          value={formData.packageType}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="text"
+          name="packageWeight"
+          placeholder="Package Weight (e.g., 2kg)"
+          value={formData.packageWeight}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="text"
+          name="totalCost"
+          placeholder="Total Cost"
+          value={formData.totalCost}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
 
-          <select
-            name="deliveryOption"
-            value={formData.deliveryOption}
-            onChange={handleChange}
-            required
-            className="w-full p-2 sm:p-3 text-sm sm:text-base bg-black border border-red-500 text-red-500 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
-          >
-            <option value="">Select Delivery Option</option>
-            <option value="standard">Standard (3-5 days)</option>
-            <option value="express">Express (1-2 days)</option>
-            <option value="same_day">Same Day</option>
-          </select>
+        <select
+          name="deliveryOption"
+          value={formData.deliveryOption}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        >
+          <option value="standard">Standard (3-5 days)</option>
+          <option value="express">Express (1-2 days)</option>
+          <option value="same_day">Same Day</option>
+        </select>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full text-sm sm:text-base ${
-              isLoading ? "bg-gray-800" : "bg-red-500 hover:bg-red-600"
-            } text-black font-semibold py-2 sm:py-3 px-4 rounded transition`}
-          >
-            {isLoading ? "Processing..." : "Book Delivery"}
-          </button>
-        </form>
-      </div>
-
-      {/* Success Modal */}
-      {showModal && trackingInfo && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-black border border-red-700 p-6 sm:p-8 rounded-lg w-full max-w-xs sm:max-w-sm text-center shadow-2xl">
-            <h3 className="text-xl sm:text-2xl font-bold text-red-500 mb-3 sm:mb-4">
-              Booking Confirmed!
-            </h3>
-            <p className="mb-3 sm:mb-4 text-sm sm:text-base text-red-400">
-              Your delivery has been scheduled.
-            </p>
-
-            <div className="bg-black border border-red-500 p-2 sm:p-3 mb-3 sm:mb-4 rounded">
-              <p className="text-red-500 text-sm sm:text-lg">Tracking Number:</p>
-              <p className="text-red-500 font-bold text-base sm:text-xl">
-                {trackingInfo.number}
-              </p>
-            </div>
-
-            <p className="mb-3 sm:mb-4 text-sm sm:text-base text-red-400">
-              Details sent to your email.
-            </p>
-
-            <a
-              href={trackingInfo.whatsappLink}
-              onClick={handleWhatsAppClick}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block w-full text-sm sm:text-base bg-red-500 hover:bg-red-600 text-black px-4 py-2 rounded mb-2"
-            >
-              💬 Chat on WhatsApp
-            </a>
-
-            <button
-              onClick={() => {
-                setShowModal(false);
-                navigate("/");
-              }}
-              className="w-full text-sm sm:text-base bg-black border border-red-500 text-red-500 px-4 py-2 rounded hover:bg-red-900 transition"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600"
+        >
+          {loading ? "Booking..." : "Book Now"}
+        </button>
+      </form>
     </div>
   );
 };
 
 export default BookingPage;
+
+
