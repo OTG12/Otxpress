@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Logo from "../assets/Logo.jpeg"; // Update this path to your actual logo
+import Logo from "../assets/Logo.jpeg";
 
 const DispatchTracker = () => {
   const [trackingId, setTrackingId] = useState('');
@@ -99,13 +99,13 @@ const DispatchTracker = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 font-sans pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 font-sans pt-16 md:pt-20">
       {/* Header */}
-      <div className="bg-black py-5 shadow-md shadow-red-100 fixed top-0 w-full z-50">
-        <div className="container mx-auto px-5">
-          <div className="flex justify-between items-center">
+      <div className="bg-black py-3 md:py-5 shadow-md shadow-red-100 fixed top-0 w-full z-50">
+        <div className="container mx-auto px-4 md:px-5">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3 md:gap-0">
             {/* Logo and Home Link */}
-            <Link to="/" className="flex items-center h-16">
+            <Link to="/" className="flex items-center h-12 md:h-16">
               <img 
                 src={Logo} 
                 alt="OTxpress" 
@@ -114,36 +114,44 @@ const DispatchTracker = () => {
             </Link>
             
             {/* Search Section */}
-            <div className="flex justify-center items-center gap-4 flex-wrap flex-1 mx-4">
+            <div className="flex flex-col md:flex-row justify-center items-center gap-3 md:gap-4 w-full md:w-auto md:flex-1 md:mx-4">
               <input 
                 type="text" 
                 id="trackingInput"
-                className="px-4 py-3 border-2 border-gray-200 rounded-lg text-base min-w-[250px] focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
-                placeholder="Enter your tracking ID (e.g., TRK-A6GARII3)"
+                className="px-4 py-2 md:py-3 border-2 border-gray-200 rounded-lg text-base w-full md:min-w-[250px] focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
+                placeholder="Enter tracking ID (e.g., TRK-A6GARII3)"
                 value={trackingId}
                 onChange={(e) => setTrackingId(e.target.value)}
               />
               <button 
                 onClick={searchDispatch} 
-                className="bg-red-600 text-white px-6 py-3 rounded-lg text-base hover:bg-red-700 active:translate-y-[1px] transition-all"
+                className="bg-red-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg text-base w-full md:w-auto hover:bg-red-700 active:translate-y-[1px] transition-all"
               >
                 Track Package
               </button>
             </div>
             
-            {/* Home Button */}
+            {/* Home Button - Hidden on mobile, shown on desktop */}
             <Link 
               to="/" 
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-base hover:bg-gray-300 transition-all whitespace-nowrap"
+              className="hidden md:block bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-base hover:bg-gray-300 transition-all whitespace-nowrap"
             >
               Back to Home
+            </Link>
+            
+            {/* Mobile Home Link */}
+            <Link 
+              to="/" 
+              className="md:hidden text-white text-sm mt-2"
+            >
+              ← Back to Home
             </Link>
           </div>
         </div>
       </div>
       
       {/* Main Content */}
-      <div className="container mx-auto px-5 pt-8 pb-16">
+      <div className="container mx-auto px-4 md:px-5 pt-6 md:pt-8 pb-12 md:pb-16">
         {loading && (
           <div className="text-center py-5 text-red-600">
             <div className="spinner border-4 border-gray-200 border-t-red-600 rounded-full w-8 h-8 mx-auto mb-3 animate-spin"></div>
@@ -159,30 +167,31 @@ const DispatchTracker = () => {
         )}
         
         {dispatchData && (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-8 items-start">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden h-[500px] relative">
-              <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center text-gray-500">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-6 md:gap-8 items-start">
+            {/* Map Container */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden h-[400px] md:h-[500px] relative">
+              <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center text-gray-500 p-4">
                 <div className="w-5 h-5 bg-red-600 rounded-full my-3 animate-pulse"></div>
-                <h3 className="text-xl font-semibold mb-2">Live Tracking Map</h3>
-                <p>Package location will be displayed here</p>
+                <h3 className="text-xl font-semibold mb-2 text-center">Live Tracking Map</h3>
+                <p className="text-center">Package location will be displayed here</p>
                 {dispatchData.rider && (
-                  <div className="p-5 text-center mt-4">
+                  <div className="p-4 md:p-5 text-center mt-4 w-full">
                     {dispatchData.rider.latitude && dispatchData.rider.longitude ? (
                       <>
                         <div className="w-5 h-5 bg-red-600 rounded-full my-3 mx-auto animate-pulse"></div>
                         <h3 className="text-red-600 font-semibold mb-4">📍 Live Location</h3>
-                        <div className="bg-red-50 p-4 rounded-lg mb-4">
+                        <div className="bg-red-50 p-3 md:p-4 rounded-lg mb-4">
                           <strong>Rider: {dispatchData.rider.username}</strong><br />
                           <small className="text-gray-500">{dispatchData.rider.email}</small>
                         </div>
-                        <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <div className="bg-white p-3 md:p-4 rounded-lg shadow-sm">
                           <div className="text-red-600 font-bold mb-2">Current Coordinates:</div>
-                          <div className="font-mono text-sm">
+                          <div className="font-mono text-xs md:text-sm">
                             Lat: {dispatchData.rider.latitude}<br />
                             Lng: {dispatchData.rider.longitude}
                           </div>
                         </div>
-                        <div className="mt-4 text-xs text-gray-500">
+                        <div className="mt-3 md:mt-4 text-xs text-gray-500">
                           🔄 Updates every 10 seconds
                         </div>
                       </>
@@ -190,11 +199,11 @@ const DispatchTracker = () => {
                       <>
                         <div className="w-5 h-5 bg-gray-500 rounded-full my-3 mx-auto"></div>
                         <h3 className="text-gray-500 font-semibold mb-4">📍 Location Tracking</h3>
-                        <div className="bg-gray-100 p-4 rounded-lg mb-4">
+                        <div className="bg-gray-100 p-3 md:p-4 rounded-lg mb-4">
                           <strong>Rider: {dispatchData.rider.username}</strong><br />
                           <small className="text-gray-500">{dispatchData.rider.email}</small>
                         </div>
-                        <div className="text-gray-500">
+                        <div className="text-gray-500 text-sm">
                           📡 Waiting for location data...<br />
                           <small>Rider's GPS will appear here once available</small>
                         </div>
@@ -205,17 +214,18 @@ const DispatchTracker = () => {
               </div>
             </div>
 
+            {/* Info Panel */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-red-600 text-white py-5 px-6 text-center">
-                <h2 className="text-xl font-semibold mb-2">Dispatch Details</h2>
-                <div className="font-mono text-base opacity-90">{dispatchData.tracking_id}</div>
+              <div className="bg-red-600 text-white py-4 md:py-5 px-4 md:px-6 text-center">
+                <h2 className="text-lg md:text-xl font-semibold mb-2">Dispatch Details</h2>
+                <div className="font-mono text-sm md:text-base opacity-90">{dispatchData.tracking_id}</div>
               </div>
-              <div className="p-6">
-                <div className="inline-block bg-red-600 text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase mb-5">
+              <div className="p-4 md:p-6">
+                <div className="inline-block bg-red-600 text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase mb-4 md:mb-5">
                   {dispatchData.status}
                 </div>
                 
-                <div className="mb-5">
+                <div className="mb-4 md:mb-5">
                   <div className="font-semibold text-red-600 text-sm mb-1">Sender Information</div>
                   <div className="text-gray-700 text-sm">
                     {dispatchData.sender_email}<br />
@@ -223,7 +233,7 @@ const DispatchTracker = () => {
                   </div>
                 </div>
 
-                <div className="mb-5">
+                <div className="mb-4 md:mb-5">
                   <div className="font-semibold text-red-600 text-sm mb-1">Recipient Information</div>
                   <div className="text-gray-700 text-sm">
                     {dispatchData.recipient_name || 'Name not provided'}<br />
@@ -231,7 +241,7 @@ const DispatchTracker = () => {
                   </div>
                 </div>
 
-                <div className="mb-5">
+                <div className="mb-4 md:mb-5">
                   <div className="font-semibold text-red-600 text-sm mb-1">Pickup Location</div>
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2">
                     <div className="w-2.5 h-2.5 bg-green-500 rounded-full flex-shrink-0"></div>
@@ -239,7 +249,7 @@ const DispatchTracker = () => {
                   </div>
                 </div>
 
-                <div className="mb-5">
+                <div className="mb-4 md:mb-5">
                   <div className="font-semibold text-red-600 text-sm mb-1">Destination</div>
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2">
                     <div className="w-2.5 h-2.5 bg-red-600 rounded-full flex-shrink-0"></div>
@@ -247,11 +257,11 @@ const DispatchTracker = () => {
                   </div>
                 </div>
 
-                <div className="mb-5">
+                <div className="mb-4 md:mb-5">
                   <div className="font-semibold text-red-600 text-sm mb-1">Package Details</div>
                   {dispatchData.package.map((pkg, index) => (
-                    <div key={index} className="bg-gray-50 p-4 rounded-lg border-l-4 border-red-600 mb-4">
-                      <div className="font-semibold text-red-600 mb-2">Package {index + 1}: {pkg.description}</div>
+                    <div key={index} className="bg-gray-50 p-3 md:p-4 rounded-lg border-l-4 border-red-600 mb-3 md:mb-4">
+                      <div className="font-semibold text-red-600 mb-2 text-sm md:text-base">Package {index + 1}: {pkg.description}</div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
                         <div><strong>Weight:</strong> {pkg.weight}kg</div>
                         <div><strong>Cost:</strong> ₦{parseFloat(pkg.cost).toLocaleString()}</div>
@@ -260,17 +270,17 @@ const DispatchTracker = () => {
                   ))}
                 </div>
 
-                <div className="mb-5">
+                <div className="mb-4 md:mb-5">
                   <div className="font-semibold text-red-600 text-sm mb-1">Total Cost</div>
                   <div className="text-lg font-bold text-red-600">₦{parseFloat(dispatchData.total_cost).toLocaleString()}</div>
                 </div>
 
-                <div className="mb-5">
+                <div className="mb-4 md:mb-5">
                   <div className="font-semibold text-red-600 text-sm mb-1">Order Date</div>
                   <div className="text-gray-700 text-sm">{new Date(dispatchData.created_at).toLocaleString()}</div>
                 </div>
 
-                <div className="mb-5">
+                <div className="mb-4 md:mb-5">
                   <div className="font-semibold text-red-600 text-sm mb-1">Payment Status</div>
                   <div className={`text-sm ${dispatchData.payment_status ? 'text-green-600' : 'text-red-600'}`}>
                     {dispatchData.payment_status ? '✓ Paid' : '✗ Unpaid'}
