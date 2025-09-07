@@ -6,12 +6,14 @@ const RiderLogin = ({ onLogin }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
 
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -24,20 +26,23 @@ const RiderLogin = ({ onLogin }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Backend error:", data);
         throw new Error(data.detail || "Login failed");
       }
 
-      // Save token for authenticated requests
+      // Save token
       localStorage.setItem("authToken", data.token);
 
-      // Pass rider data to parent if needed
       if (onLogin) {
         onLogin(data.rider);
       }
 
-      // ✅ redirect to rider dashboard
-      navigate("/rider/dashboard");
+      // ✅ Show success message
+      setSuccess("Login successful! Redirecting...");
+
+      // ✅ Delay redirect slightly so user sees message
+      setTimeout(() => {
+        navigate("/rider/dashboard");
+      }, 1500);
 
     } catch (err) {
       setError(err.message);
@@ -53,36 +58,51 @@ const RiderLogin = ({ onLogin }) => {
         className="bg-white shadow-md rounded-xl p-6 w-96"
       >
         <h2 className="text-xl font-bold text-center mb-4">Rider Login</h2>
-        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+
+        {/* Error message */}
+        {error && (
+          <p className="text-red-500 text-sm mb-2 text-center">{error}</p>
+        )}
+
+        {/* Success message */}
+        {success && (
+          <p className="text-green-600 text-sm mb-2 text-center">{success}</p>
+        )}
 
         <input
           type="email"
+          id="email"
+          name="email"
           placeholder="Email"
           className="w-full border p-2 rounded mb-3"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="email"
         />
 
         <input
           type="password"
+          id="password"
+          name="password"
           placeholder="Password"
           className="w-full border p-2 rounded mb-4"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="current-password"
         />
 
         <button
           type="submit"
-          className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600"
+          className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 disabled:opacity-50"
           disabled={loading}
         >
           {loading ? "Logging in..." : "Login"}
         </button>
 
         <p className="text-sm text-center mt-3">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <Link to="/rider/signup" className="text-blue-600 hover:underline">
             Sign Up
           </Link>
@@ -93,6 +113,7 @@ const RiderLogin = ({ onLogin }) => {
 };
 
 export default RiderLogin;
+
 
 
 

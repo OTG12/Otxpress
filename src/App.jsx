@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Hero from "./components/Hero";
@@ -32,7 +32,20 @@ const HomePage = () => (
 );
 
 const App = () => {
-  const [rider, setRider] = useState(null);
+  // Load rider from localStorage if available
+  const [rider, setRider] = useState(() => {
+    const savedRider = localStorage.getItem("rider");
+    return savedRider ? JSON.parse(savedRider) : null;
+  });
+
+  // Sync localStorage whenever rider changes
+  useEffect(() => {
+    if (rider) {
+      localStorage.setItem("rider", JSON.stringify(rider));
+    } else {
+      localStorage.removeItem("rider");
+    }
+  }, [rider]);
 
   return (
     <>
@@ -42,7 +55,7 @@ const App = () => {
           {/* Public site */}
           <Route path="/" element={<HomePage />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/dispatchtracker" element={<DispatchTracker/>} />
+          <Route path="/dispatchtracker" element={<DispatchTracker />} />
           <Route path="/bookdelivery" element={<BookDelivery />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/aboutus" element={<AboutUs />} />
@@ -52,7 +65,17 @@ const App = () => {
             path="/rider"
             element={
               rider ? (
-                <Navigate to="/rider/dashboard" />
+                <Navigate to="/rider/dashboard" replace />
+              ) : (
+                <RiderLogin onLogin={setRider} />
+              )
+            }
+          />
+          <Route
+            path="/rider/login"
+            element={
+              rider ? (
+                <Navigate to="/rider/dashboard" replace />
               ) : (
                 <RiderLogin onLogin={setRider} />
               )
@@ -65,9 +88,16 @@ const App = () => {
           <Route
             path="/rider/dashboard"
             element={
-              rider ? <RiderDashboard user={rider} /> : <Navigate to="/rider" />
+              rider ? (
+                <RiderDashboard user={rider} onLogout={() => setRider(null)} />
+              ) : (
+                <Navigate to="/rider" replace />
+              )
             }
           />
+          
+          {/* Catch-all route for undefined paths */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </>
@@ -75,5 +105,6 @@ const App = () => {
 };
 
 export default App;
+
 
 
