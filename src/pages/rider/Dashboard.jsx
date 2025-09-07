@@ -60,23 +60,107 @@ const RiderDashboard = () => {
   }, []);
 
 
-  useEffect(() => {
-    let socketCleanup;
-    (async () => {
-      try {
-        socketCleanup = await streamLocation();
-      } catch (err) {
-        console.error("Location streaming error:", err);
-      }
-    })();
+useEffect(() => {
+  let cleanupFn = null;
+  let fallbackWs = null;
 
-    // optional cleanup if streamLocation returns socket ref
-    return () => {
-      if (socketCleanup && typeof socketCleanup.close === "function") {
-        socketCleanup.close();
+  const handleStreamPayload = (raw) => {
+    try {
+      const payload = typeof raw === "string" ? JSON.parse(raw) : raw;
+      console.log("Location stream payload:", payload);
+
+      // Normalize ids and coords from different payload shapes
+      const riderId = payload.rider_id ?? payload.id ?? payload.rider?.id ?? null;
+      const lat = Number(payload.latitude ?? payload.lat ?? payload.rider?.latitude);
+      const lng = Number(payload.longitude ?? payload.lng ?? payload.rider?.longitude);
+
+      if (!riderId || Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+      // Update deliveries where rider id matches
+      setDeliveries((prev) =>
+        prev.map((d) => {
+          const rid = d.rider?.id ?? d.rider?.user_id ?? null;
+          if (rid === riderId) {
+            return {
+              ...d,
+              rider: {
+                ...d.rider,
+                latitude: lat,
+                longitude: lng,
+              },
+            };
+          }
+          return d;
+        })
+      );
+
+      // If profile belongs to the same rider, update it too
+      setProfile((p) => {
+        if (!p) return p;
+        const pid = p.id ?? p.rider_id;
+        if (pid === riderId) {
+          return { ...p, latitude: lat, longitude: lng };
+        }
+        return p;
+      });
+    } catch (err) {
+      console.error("Error handling stream payload:", err);
+    }
+  };
+
+  (async () => {
+    try {
+      // streamLocation may support a callback or return a socket/unsubscribe.
+      // We call it with a callback if it accepts one.
+      const result = await streamLocation(handleStreamPayload);
+
+      // If the helper returned a function => treat as unsubscribe
+      if (typeof result === "function") {
+        cleanupFn = result;
+        console.info("streamLocation returned unsubscribe function");
+        return;
       }
-    };
-  }, []);
+
+      // If helper returned a socket-like object (WebSocket), hook handlers
+      if (result && typeof result.onmessage !== "undefined") {
+        const ws = result;
+        ws.onmessage = (ev) => {
+          handleStreamPayload(ev.data);
+        };
+        ws.onopen = () => console.info("Location WebSocket connected (from streamLocation)");
+        ws.onerror = (e) => console.error("Location WebSocket error (from streamLocation):", e);
+        cleanupFn = () => {
+          try { ws.close(); } catch (e) {}
+        };
+        return;
+      }
+
+      // Fallback: open a raw WebSocket to a predictable endpoint
+      const baseWs = import.meta.env.VITE_WS_URL ?? "ws://localhost:8000";
+      const wsUrl = `${baseWs.replace(/\/$/, "")}/ws/riders/`;
+      console.info("Opening fallback WS to", wsUrl);
+      fallbackWs = new WebSocket(wsUrl);
+      fallbackWs.onopen = () => console.info("Fallback location WS connected");
+      fallbackWs.onmessage = (ev) => handleStreamPayload(ev.data);
+      fallbackWs.onerror = (e) => console.error("Fallback WS error:", e);
+      cleanupFn = () => {
+        try { fallbackWs.close(); } catch (e) {}
+      };
+    } catch (err) {
+      console.error("Location streaming error:", err);
+    }
+  })();
+
+  return () => {
+    if (typeof cleanupFn === "function") {
+      try { cleanupFn(); } catch (e) { console.warn("cleanup failed", e); }
+    }
+    if (fallbackWs && typeof fallbackWs.close === "function") {
+      try { fallbackWs.close(); } catch (e) {}
+    }
+  };
+}, []);
+
 
 
   const getStatusColor = (status) => {

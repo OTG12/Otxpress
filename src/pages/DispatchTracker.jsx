@@ -267,9 +267,7 @@ const DispatchTracker = () => {
       // Normalize coords and auto-fix sign (same logic as provided HTML)
       let lat = parseFloat(dispatchData.rider?.latitude || 0) || 0;
       let lng = parseFloat(dispatchData.rider?.longitude || 0) || 0;
-      if (lng > 0 && lat > 0 && lat < 50) {
-        lng = -lng;
-      }
+ 
 
       // Update map marker
       if (mapInstanceRef.current) {

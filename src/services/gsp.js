@@ -12,6 +12,11 @@ export async function getUserLocation() {
         },
         (error) => {
           reject(error);
+        },
+        {
+          enableHighAccuracy: true,  
+          timeout: 10000,            // ✅ wait max 10s before failing
+          maximumAge: 0,             // ✅ no cached position
         }
       );
     } else {
@@ -22,15 +27,20 @@ export async function getUserLocation() {
 
 export async function streamLocation() {
   try {
-    const { user_id: riderId } = await getUserFromToken(); // ✅ no .json()
-    if (!riderId) throw new Error("No rider ID found in token");
+    const user = await getUserFromToken();  // already parsed
+    const riderId = user?.user_id;
 
-    const socket = new WebSocket(`${WS}/ws/riders/${riderId}/`);
+    if (!riderId) {
+      console.error("❌ No riderId found, redirecting to login...");
+      window.location.href = "/login";
+      return;
+    }
+
+    const socket = new WebSocket(`ws://localhost:8000/ws/riders/${riderId}/`);
 
     socket.onopen = () => {
-      console.log("✅ WebSocket connected");
+      console.log(`✅ Connected to WS for rider ${riderId}`);
 
-      // send location every 5 seconds
       setInterval(async () => {
         try {
           const { latitude, longitude } = await getUserLocation();
@@ -42,24 +52,19 @@ export async function streamLocation() {
             })
           );
         } catch (err) {
-          console.error("❌ Failed to get location:", err);
+          console.error("Failed to get location:", err);
         }
       }, 5000);
     };
 
     socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("📍 Location update:", data);
+      console.log("📍 Location update:", JSON.parse(event.data));
     };
 
     socket.onclose = () => {
       console.warn("⚠️ WebSocket closed");
     };
-
-    socket.onerror = (err) => {
-      console.error("WebSocket error:", err);
-    };
   } catch (err) {
-    console.error("❌ Cannot stream location:", err);
+    console.error("❌ Error starting location stream:", err);
   }
 }
