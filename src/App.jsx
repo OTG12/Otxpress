@@ -19,6 +19,8 @@ import RiderSignup from "./pages/rider/Signup";
 import RiderDashboard from "./pages/rider/Dashboard";
 import DispatchTracker from "./pages/DispatchTracker";
 
+import { getUserFromToken, isAuthenticated } from "./services/auth";
+
 const HomePage = () => (
   <>
     <Hero />
@@ -32,20 +34,15 @@ const HomePage = () => (
 );
 
 const App = () => {
-  // Load rider from localStorage if available
-  const [rider, setRider] = useState(() => {
-    const savedRider = localStorage.getItem("rider");
-    return savedRider ? JSON.parse(savedRider) : null;
-  });
+  const [user, setUser] = useState(null);
 
-  // Sync localStorage whenever rider changes
+  // On app load, check if access_token + refresh_token exist
   useEffect(() => {
-    if (rider) {
-      localStorage.setItem("rider", JSON.stringify(rider));
-    } else {
-      localStorage.removeItem("rider");
+    if (isAuthenticated()) {
+      const userFromToken = getUserFromToken();
+      setUser(userFromToken);
     }
-  }, [rider]);
+  }, []);
 
   return (
     <>
@@ -64,39 +61,39 @@ const App = () => {
           <Route
             path="/rider"
             element={
-              rider ? (
+              isAuthenticated() ? (
                 <Navigate to="/rider/dashboard" replace />
               ) : (
-                <RiderLogin onLogin={setRider} />
+                <RiderLogin onLogin={setUser} />
               )
             }
           />
           <Route
             path="/rider/login"
             element={
-              rider ? (
+              isAuthenticated() ? (
                 <Navigate to="/rider/dashboard" replace />
               ) : (
-                <RiderLogin onLogin={setRider} />
+                <RiderLogin onLogin={setUser} />
               )
             }
           />
           <Route
             path="/rider/signup"
-            element={<RiderSignup onSignup={setRider} />}
+            element={<RiderSignup onSignup={setUser} />}
           />
           <Route
             path="/rider/dashboard"
             element={
-              rider ? (
-                <RiderDashboard user={rider} onLogout={() => setRider(null)} />
+              isAuthenticated() ? (
+                <RiderDashboard user={user} onLogout={() => setUser(null)} />
               ) : (
-                <Navigate to="/rider" replace />
+                <Navigate to="/rider/login" replace />
               )
             }
           />
-          
-          {/* Catch-all route for undefined paths */}
+
+          {/* Catch-all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -105,6 +102,3 @@ const App = () => {
 };
 
 export default App;
-
-
-

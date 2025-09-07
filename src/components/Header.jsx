@@ -170,7 +170,7 @@ const Header = () => {
   }, []);
 
   return (
-    <header className={`bg-black text-white fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg py-2 border-b border-red-700' : 'py-3 border-b border-red-700'}`}>
+    <header className={`bg-black text-white fixed top-0 left-0 w-full z-50 mb-8 transition-all duration-300 ${isScrolled ? 'shadow-lg py-2 border-b border-red-700' : 'py-3 border-b border-red-700'}`}>
       <div className="max-w-7xl mx-auto px-4 flex justify-between items-center h-16">
         {/* Logo */}
         <Link to="/" className="flex items-center h-16">

@@ -252,7 +252,7 @@ const DispatchTracker = () => {
     setEta(null);
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/dispatch/search/${trackingId}`);
+      const res = await fetch(`http://127.0.0.1:8000/dispatches/search/${trackingId}`);
       if (!res.ok) throw new Error('Not found');
 
       const data = await res.json();

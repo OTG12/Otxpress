@@ -1,127 +1,199 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { streamLocation, getUserLocation } from "../../services/gsp";
+import { riderStats, fetchRiderProfile, riderDeliveries, logout } from "../../services/rider";
+import {
+  Package,
+  CheckCircle,
+  DollarSign,
+  Star,
+  Truck,
+  MapPin,
+  FileText,
+  MapPinOff,
+  CreditCard,
+  LogOut,
+  User,
+  Mail,
+  Clock,
+  AlertCircle,
+  Navigation
+} from "lucide-react";
 
-const RiderDashboard = ({ user, onLogout }) => {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [deliveryHistory, setDeliveryHistory] = useState([]);
-  const [currentDeliveries, setCurrentDeliveries] = useState([]);
-  const [loading, setLoading] = useState(true);
+const RiderDashboard = () => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    jobs: 0,
+    completed_jobs: 0,
+    total_earnings: 0
+  });
+  const [profile, setProfile] = useState(null);
+  const [deliveries, setDeliveries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // NEW: filter tab state
+  const [filterTab, setFilterTab] = useState("all"); // all | not_started | in_progress | completed
 
   useEffect(() => {
-    // Simulate fetching data from API
-    const fetchData = async () => {
-      setLoading(true);
+    const fetchDashboardData = async () => {
       try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setLoading(true);
+        const [statsData, profileData, deliveriesData] = await Promise.all([
+          riderStats(),
+          fetchRiderProfile(),
+          riderDeliveries()
+        ]);
         
-        // Mock data for delivery history
-        const mockDeliveries = [
-          { 
-            id: 1, 
-            trackingId: "DLV-001", 
-            pickup: "Lagos Island Warehouse", 
-            delivery: "Ikeja Customer", 
-            date: "01 Sept 2025", 
-            status: "delivered", 
-            earnings: "₦1,500",
-            packageType: "Document",
-            weight: "0.5kg"
-          },
-          { 
-            id: 2, 
-            trackingId: "DLV-002", 
-            pickup: "Lekki Distribution Center", 
-            delivery: "Victoria Island Office", 
-            date: "28 Aug 2025", 
-            status: "delivered", 
-            earnings: "₦2,000",
-            packageType: "Parcel",
-            weight: "2kg"
-          },
-          { 
-            id: 3, 
-            trackingId: "DLV-003", 
-            pickup: "Surulere Depot", 
-            delivery: "Yaba Retail Store", 
-            date: "25 Aug 2025", 
-            status: "delivered", 
-            earnings: "₦1,800",
-            packageType: "Package",
-            weight: "5kg"
-          }
-        ];
-
-        // Mock current deliveries
-        const mockCurrentDeliveries = [
-          {
-            id: 4,
-            trackingId: "DLV-004",
-            pickup: "Apapa Port",
-            delivery: "Gbagada Customer",
-            status: "in-transit",
-            estimatedTime: "45 min",
-            packageType: "Urgent Document",
-            priority: "high"
-          }
-        ];
-
-        setDeliveryHistory(mockDeliveries);
-        setCurrentDeliveries(mockCurrentDeliveries);
-      } catch (error) {
-        console.error("Error fetching data:", error);
+        setStats(statsData);
+        setProfile(profileData);
+        setDeliveries(Array.isArray(deliveriesData) ? deliveriesData : []);
+      } catch (err) {
+        setError("Failed to load dashboard data");
+        console.error("Dashboard error:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchDashboardData();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("rider");
-    if (onLogout) {
-      onLogout();
-    }
-    navigate("/rider");
-  };
 
-  const stats = [
-    { label: "Total Deliveries", value: "156", icon: "📦", trend: "+12% this week" },
-    { label: "Completed", value: "148", icon: "✅", trend: "94% success rate" },
-    { label: "Total Earnings", value: "₦287,500", icon: "💰", trend: "₦45,800 this month" },
-    { label: "Customer Rating", value: "4.8/5", icon: "⭐", trend: "From 132 reviews" }
-  ];
+  useEffect(() => {
+    let socketCleanup;
+    (async () => {
+      try {
+        socketCleanup = await streamLocation();
+      } catch (err) {
+        console.error("Location streaming error:", err);
+      }
+    })();
+
+    // optional cleanup if streamLocation returns socket ref
+    return () => {
+      if (socketCleanup && typeof socketCleanup.close === "function") {
+        socketCleanup.close();
+      }
+    };
+  }, []);
+
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "delivered": return "bg-green-100 text-green-800";
-      case "in-transit": return "bg-blue-100 text-blue-800";
-      case "pickup-pending": return "bg-yellow-100 text-yellow-800";
-      case "cancelled": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+    switch ((status || "").toUpperCase()) {
+      case "PACKING":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "IN_TRANSIT":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "DELIVERED":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
+
+  const getStatusIcon = (status) => {
+    switch ((status || "").toUpperCase()) {
+      case "PACKING":
+        return <Package className="w-4 h-4" />;
+      case "IN_TRANSIT":
+        return <Truck className="w-4 h-4" />;
+      case "DELIVERED":
+        return <CheckCircle className="w-4 h-4" />;
+      case "CANCELLED":
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <Package className="w-4 h-4" />;
+    }
+  };
+
+  // replace existing handleLogout or wire the button to the shared logout
+  const handleLogout = () => {
+    logout();
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // NEW: helpers to filter deliveries by status groups
+  const isNotStarted = (d) => (d.status || "").toUpperCase() === "PACKING";
+  const isInProgress = (d) => (d.status || "").toUpperCase() === "IN_TRANSIT";
+  const isCompleted = (d) => (d.status || "").toUpperCase() === "DELIVERED";
+
+  const counts = {
+    all: deliveries.length,
+    not_started: deliveries.filter(isNotStarted).length,
+    in_progress: deliveries.filter(isInProgress).length,
+    completed: deliveries.filter(isCompleted).length
+  };
+
+  const filteredDeliveries = deliveries.filter((d) => {
+    if (filterTab === "all") return true;
+    if (filterTab === "not_started") return isNotStarted(d);
+    if (filterTab === "in_progress") return isInProgress(d);
+    if (filterTab === "completed") return isCompleted(d);
+    return true;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Delivery Dashboard</h1>
-              <p className="text-sm text-gray-600">Welcome back, {user?.name}</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <Truck className="w-8 h-8 text-blue-600" />
+              <h1 className="text-xl font-semibold text-gray-900">Rider Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-700">Rider ID: {user?.riderId || "RDR-001"}</span>
+              {profile && (
+                <div className="flex items-center space-x-2">
+                  <User className="w-5 h-5 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">{profile.username}</span>
+                </div>
+              )}
               <button
                 onClick={handleLogout}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
               >
-                Logout
+                <LogOut className="w-4 h-4" /> Logout
               </button>
             </div>
           </div>
@@ -129,266 +201,237 @@ const RiderDashboard = ({ user, onLogout }) => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center mb-2">
-                <span className="text-2xl mr-3">{stat.icon}</span>
-                <div>
-                  <p className="text-sm text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm p-6 border">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Jobs</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.jobs}</p>
               </div>
-              <p className="text-xs text-gray-500">{stat.trend}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Current Deliveries */}
-        {currentDeliveries.length > 0 && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-orange-800">🚚 Active Deliveries</h2>
-            <div className="space-y-4">
-              {currentDeliveries.map((delivery) => (
-                <div key={delivery.id} className="bg-white p-4 rounded-lg shadow">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <p className="font-semibold">Tracking: {delivery.trackingId}</p>
-                      <p className="text-sm text-gray-600">{delivery.pickup} → {delivery.delivery}</p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(delivery.status)}`}>
-                      {delivery.status}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Type:</span> {delivery.packageType}
-                    </div>
-                    <div>
-                      <span className="text-gray-600">ETA:</span> {delivery.estimatedTime}
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Priority:</span>
-                      <span className={`ml-1 ${delivery.priority === 'high' ? 'text-red-600 font-semibold' : 'text-gray-600'}`}>
-                        {delivery.priority}
-                      </span>
-                    </div>
-                    <button className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">
-                      Update Status
-                    </button>
-                  </div>
-                </div>
-              ))}
+              <div className="bg-blue-100 p-3 rounded-lg">
+                <Package className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow mb-8">
-          <nav className="flex border-b">
-            {["overview", "deliveries", "earnings", "profile"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 font-medium text-sm capitalize ${
-                  activeTab === tab
-                    ? "border-b-2 border-blue-500 text-blue-600"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                {tab.replace("-", " ")}
-              </button>
-            ))}
-          </nav>
-
-          {/* Tab Content */}
-          <div className="p-6">
-            {activeTab === "overview" && (
+          <div className="bg-white rounded-lg shadow-sm p-6 border">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <Link
-                    to="/bookdelivery"
-                    className="bg-blue-500 text-white p-4 rounded-lg text-center hover:bg-blue-600 transition-colors"
-                  >
-                    📦 New Delivery Pickup
-                  </Link>
-                  <Link
-                    to="/dispatchtracker"
-                    className="bg-green-500 text-white p-4 rounded-lg text-center hover:bg-green-600 transition-colors"
-                  >
-                    📍 Track Package
-                  </Link>
-                  <button className="bg-purple-500 text-white p-4 rounded-lg hover:bg-purple-600 transition-colors">
-                    💰 View Today's Earnings
-                  </button>
-                </div>
+                <p className="text-sm font-medium text-gray-600">Completed Jobs</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.completed_jobs}</p>
+              </div>
+              <div className="bg-green-100 p-3 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
 
-                <h2 className="text-xl font-semibold mb-4">Recent Deliveries</h2>
-                {loading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Loading delivery history...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {deliveryHistory.slice(0, 5).map((delivery) => (
-                      <div key={delivery.id} className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-semibold">{delivery.pickup} → {delivery.delivery}</p>
-                            <p className="text-sm text-gray-600">
-                              {delivery.trackingId} • {delivery.date} • {delivery.packageType} ({delivery.weight})
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(delivery.status)}`}>
-                              {delivery.status}
+          <div className="bg-white rounded-lg shadow-sm p-6 border">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Earnings</p>
+                <p className="text-2xl font-bold text-gray-900">₦{stats.total_earnings}</p>
+              </div>
+              <div className="bg-yellow-100 p-3 rounded-lg">
+                <DollarSign className="w-6 h-6 text-yellow-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Deliveries List */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm border">
+              <div className="p-6 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <FileText className="w-5 h-5 mr-2 text-gray-500" />
+                  Recent Deliveries
+                </h2>
+
+                {/* NEW: filter tabs */}
+                <div className="flex items-center gap-2">
+                  {[
+                    { key: "all", label: `All (${counts.all})` },
+                    { key: "not_started", label: `Not started (${counts.not_started})` },
+                    { key: "in_progress", label: `In progress (${counts.in_progress})` },
+                    { key: "completed", label: `Completed (${counts.completed})` }
+                  ].map(tab => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setFilterTab(tab.key)}
+                      className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                        filterTab === tab.key ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="divide-y divide-gray-200">
+                {filteredDeliveries.length > 0 ? (
+                  filteredDeliveries.map((delivery) => (
+                    <div key={delivery.id} className="p-6 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="font-medium text-gray-900">
+                              {delivery.tracking_id}
                             </span>
-                            <p className="text-sm font-semibold text-green-600">{delivery.earnings}</p>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(delivery.status)}`}>
+                              {getStatusIcon(delivery.status)}
+                              <span className="ml-1">{(delivery.status || "").replace('_', ' ')}</span>
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{delivery.package_description}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <div className="flex items-center text-gray-600 mb-1">
+                            <User className="w-4 h-4 mr-1" />
+                            <span className="font-medium">From:</span>
+                          </div>
+                          <p className="text-gray-900">{delivery.sender_name}</p>
+                          <p className="text-gray-600">{delivery.sender_phone_number}</p>
+                          <div className="flex items-center text-gray-600 mt-1">
+                            <MapPin className="w-4 h-4 mr-1" />
+                            <span className="text-xs">{delivery.pickup_location}</span>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="flex items-center text-gray-600 mb-1">
+                            <Navigation className="w-4 h-4 mr-1" />
+                            <span className="font-medium">To:</span>
+                          </div>
+                          <p className="text-gray-900">{delivery.recipient_name}</p>
+                          <p className="text-gray-600">{delivery.destination_phone_number}</p>
+                          <div className="flex items-center text-gray-600 mt-1">
+                            <MapPinOff className="w-4 h-4 mr-1" />
+                            <span className="text-xs">{delivery.destination_location}</span>
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === "deliveries" && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Delivery History</h2>
-                {loading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Loading delivery history...</p>
-                  </div>
+                      
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Clock className="w-4 h-4 mr-1" />
+                          {formatDate(delivery.created_at)}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className={`flex items-center px-2 py-1 rounded-full text-xs ${
+                            delivery.payment_status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            <CreditCard className="w-3 h-3 mr-1" />
+                            {delivery.payment_status ? 'Paid' : 'Unpaid'}
+                          </div>
+                          {delivery.total_cost && (
+                            <span className="font-semibold text-gray-900">₦{delivery.total_cost}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tracking ID</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Route</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Package</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Earnings</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {deliveryHistory.map((delivery) => (
-                          <tr key={delivery.id}>
-                            <td className="px-6 py-4 whitespace-nowrap font-mono text-sm">
-                              {delivery.trackingId}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div>
-                                <div className="font-medium">{delivery.pickup}</div>
-                                <div className="text-sm text-gray-600">→ {delivery.delivery}</div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">{delivery.date}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {delivery.packageType} ({delivery.weight})
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(delivery.status)}`}>
-                                {delivery.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap font-semibold text-green-600">
-                              {delivery.earnings}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="p-12 text-center">
+                    <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No deliveries found for this filter</p>
+                    <p className="text-sm text-gray-400 mt-1">Try another filter or refresh</p>
                   </div>
                 )}
               </div>
-            )}
+            </div>
+          </div>
 
-            {activeTab === "earnings" && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Earnings Overview</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-green-800">Today's Earnings</h3>
-                    <p className="text-2xl font-bold">₦8,500</p>
-                    <p className="text-sm text-green-600">5 deliveries completed</p>
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-blue-800">This Week</h3>
-                    <p className="text-2xl font-bold">₦42,300</p>
-                    <p className="text-sm text-blue-600">24 deliveries completed</p>
-                  </div>
-                  <div className="bg-purple-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-purple-800">This Month</h3>
-                    <p className="text-2xl font-bold">₦145,800</p>
-                    <p className="text-sm text-purple-600">89 deliveries completed</p>
-                  </div>
-                </div>
-                
-                {/* Logout button in earnings tab as well for easy access */}
-                <div className="mt-8 pt-6 border-t">
-                  <button
-                    onClick={handleLogout}
-                    className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    🚪 Logout
-                  </button>
-                </div>
+          {/* Profile Card */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-sm border">
+              <div className="p-6 border-b">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <User className="w-5 h-5 mr-2 text-gray-500" />
+                  Profile
+                </h2>
               </div>
-            )}
+              {profile && (
+                <div className="p-6 space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-blue-100 p-2 rounded-lg">
+                      <User className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Username</p>
+                      <p className="font-medium text-gray-900">{profile.username}</p>
+                    </div>
+                  </div>
 
-            {activeTab === "profile" && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Rider Profile</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                    <p className="bg-gray-50 p-3 rounded-lg">{user?.name || "N/A"}</p>
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-green-100 p-2 rounded-lg">
+                      <Mail className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Email</p>
+                      <p className="font-medium text-gray-900">{profile.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <p className="bg-gray-50 p-3 rounded-lg">{user?.email || "N/A"}</p>
+
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-red-100 p-2 rounded-lg">
+                      <MapPin className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Location</p>
+                      <p className="font-medium text-gray-900">
+                        {profile.latitude}°N, {profile.longitude}°W
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                    <p className="bg-gray-50 p-3 rounded-lg">{user?.phone || "N/A"}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Rider ID</label>
-                    <p className="bg-gray-50 p-3 rounded-lg">{user?.riderId || "RDR-001"}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
-                    <p className="bg-gray-50 p-3 rounded-lg">Motorcycle</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Service Area</label>
-                    <p className="bg-gray-50 p-3 rounded-lg">Lagos Metropolitan</p>
+
+                  <div className="pt-4 border-t">
+                    <Link
+                      to="/rider/profile/edit"
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-center block"
+                    >
+                      Edit Profile
+                    </Link>
                   </div>
                 </div>
-                
-                <div className="space-x-4">
-                  <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
-                    Edit Profile
-                  </button>
-                  <button className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
-                    Update Documents
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    Logout
-                  </button>
-                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-lg shadow-sm border mt-6">
+              <div className="p-6 border-b">
+                <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
               </div>
-            )}
+              <div className="p-4 space-y-2">
+                <Link
+                  to="/rider/deliveries"
+                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Truck className="w-5 h-5 text-blue-600" />
+                  <span className="text-gray-700">View All Deliveries</span>
+                </Link>
+                <Link
+                  to="/rider/earnings"
+                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <span className="w-5 h-5 text-green-600">₦</span>
+                  <span className="text-gray-700">Earnings Report</span>
+                </Link>
+                <Link
+                  to="/rider/map"
+                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <MapPin className="w-5 h-5 text-red-600" />
+                  <span className="text-gray-700">Live Map</span>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -397,4 +440,3 @@ const RiderDashboard = ({ user, onLogout }) => {
 };
 
 export default RiderDashboard;
-
