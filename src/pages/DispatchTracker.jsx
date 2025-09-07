@@ -1,308 +1,453 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import Logo from "../assets/Logo.jpeg";
+import React, { useState, useEffect, useRef } from 'react';
 
 const DispatchTracker = () => {
   const [trackingId, setTrackingId] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [dispatchData, setDispatchData] = useState(null);
+  const [dispatch, setDispatch] = useState(null);
   const [error, setError] = useState(null);
-  const [locationInterval, setLocationInterval] = useState(null);
+  const [loading, setLoading] = useState(false);
+  // eta now stored as seconds (number) or null
+  const [eta, setEta] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
 
-  // Handle Enter key in search input
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const riderMarkerRef = useRef(null);
+  const scriptLoadedRef = useRef(false);
+  const wsRef = useRef(null);
+  const geoWatchIdRef = useRef(null);
+
+  // helper: haversine distance (km)
+  const haversineKm = (a, b) => {
+    const toRad = (v) => (v * Math.PI) / 180;
+    const R = 6371; // km
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const sinDLat = Math.sin(dLat / 2);
+    const sinDLon = Math.sin(dLon / 2);
+    const aHarv = sinDLat * sinDLat + sinDLon * sinDLon * Math.cos(lat1) * Math.cos(lat2);
+    const c = 2 * Math.atan2(Math.sqrt(aHarv), Math.sqrt(1 - aHarv));
+    return R * c;
+  };
+
+  // compute ETA in minutes using device location -> rider location with a default average speed
+  const computeEtaMinutes = (from, to, speedKmh = 30) => {
+    if (!from || !to) return null;
+    const dKm = haversineKm(from, to);
+    if (dKm === 0) return 0;
+    const hours = dKm / speedKmh;
+    return Math.max(1, Math.ceil(hours * 60));
+  };
+
+  // format seconds into "mo w d h m s"
+  const formatDurationSeconds = (seconds) => {
+    if (seconds == null || Number.isNaN(Number(seconds))) return 'N/A';
+    let s = Math.max(0, Math.floor(Number(seconds)));
+
+    const units = [
+      { label: 'mo', val: 30 * 24 * 3600 },
+      { label: 'w',  val: 7 * 24 * 3600 },
+      { label: 'd',  val: 24 * 3600 },
+      { label: 'h',  val: 3600 },
+      { label: 'm',  val: 60 },
+      { label: 's',  val: 1 },
+    ];
+
+    const parts = [];
+    for (const u of units) {
+      const q = Math.floor(s / u.val);
+      if (q > 0) {
+        parts.push(`${q}${u.label}`);
+        s -= q * u.val;
+      }
+    }
+    return parts.length ? parts.join(' ') : '0s';
+  };
+
+  // watch device GPS
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.key === 'Enter') {
-        searchDispatch();
+    if ('geolocation' in navigator) {
+      try {
+        geoWatchIdRef.current = navigator.geolocation.watchPosition(
+          (pos) => {
+            const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            setUserLocation(loc);
+          },
+          (err) => {
+            console.warn('Geolocation watch error', err);
+          },
+          { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+      } catch (e) {
+        console.warn('Geolocation watch failed', e);
+      }
+    }
+    return () => {
+      if (geoWatchIdRef.current != null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(geoWatchIdRef.current);
+        geoWatchIdRef.current = null;
+      }
+    };
+  }, []);
+
+  // recompute ETA whenever userLocation or rider map coords change
+  useEffect(() => {
+    const riderCoords = dispatch?._mapCoords ?? (dispatch?.rider ? { lat: Number(dispatch.rider.latitude) || 0, lng: Number(dispatch.rider.longitude) || 0 } : null);
+    if (userLocation && riderCoords && riderCoords.lat && riderCoords.lng) {
+      const minutes = computeEtaMinutes(userLocation, riderCoords);
+      if (minutes != null) setEta(minutes * 60); // store seconds
+    }
+  }, [userLocation, dispatch]);
+
+  // Load keyless maps script if needed and initialize map
+  useEffect(() => {
+    const initMapIfReady = () => {
+      if (mapRef.current && !mapInstanceRef.current && window.google && window.google.maps) {
+        mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+          center: { lat: 9.082, lng: 8.6753 },
+          zoom: 6,
+        });
       }
     };
 
-    const input = document.getElementById('trackingInput');
-    if (input) {
-      input.addEventListener('keypress', handleKeyPress);
+    if (window.google && window.google.maps) {
+      initMapIfReady();
+      return;
     }
 
-    return () => {
-      if (input) {
-        input.removeEventListener('keypress', handleKeyPress);
-      }
-    };
-  }, [trackingId]);
+    if (!scriptLoadedRef.current) {
+      scriptLoadedRef.current = true;
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/gh/somanchiu/Keyless-Google-Maps-API@v7.1/mapsJavaScriptAPI.js';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => initMapIfReady();
+      document.head.appendChild(script);
+    }
 
-  // Clean up interval on component unmount
+    const interval = setInterval(() => {
+      if (window.google && window.google.maps) {
+        initMapIfReady();
+        clearInterval(interval);
+      }
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // cleanup websocket on unmount
   useEffect(() => {
     return () => {
-      if (locationInterval) {
-        clearInterval(locationInterval);
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      if (geoWatchIdRef.current != null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(geoWatchIdRef.current);
+        geoWatchIdRef.current = null;
       }
     };
-  }, [locationInterval]);
+  }, []);
+
+  // connect to rider websocket for realtime updates
+  const connectRiderWs = (riderId) => {
+    if (!riderId) return;
+
+    // close existing
+    if (wsRef.current) {
+      try { wsRef.current.close(); } catch (e) {}
+      wsRef.current = null;
+    }
+
+    const wsUrl = `ws://localhost:8000/ws/riders/${riderId}/`;
+    console.info('Connecting Rider WS ->', wsUrl);
+
+    try {
+      wsRef.current = new WebSocket(wsUrl);
+    } catch (err) {
+      console.error('WS open error', err);
+      setError('WebSocket connection failed');
+      return;
+    }
+
+    wsRef.current.onopen = () => {
+      console.info('Rider WS connected', riderId);
+      setError(null);
+    };
+
+    wsRef.current.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        // support different payload keys
+        let lat = parseFloat(payload.latitude ?? payload.lat ?? payload.lat_deg ?? 0) || 0;
+        let lng = parseFloat(payload.longitude ?? payload.lng ?? payload.lon ?? 0) || 0;
+
+        // auto-fix sign if needed
+        if (lng > 0 && lat > 0 && lat < 50) {
+          lng = -lng;
+        }
+
+        // update marker on map
+        if (mapInstanceRef.current) {
+          const position = { lat, lng };
+          if (!riderMarkerRef.current) {
+            riderMarkerRef.current = new window.google.maps.Marker({
+              position,
+              map: mapInstanceRef.current,
+              title: dispatch?.rider?.username || 'Rider',
+            });
+          } else {
+            riderMarkerRef.current.setPosition(position);
+          }
+          mapInstanceRef.current.setCenter(position);
+        }
+
+        // update dispatch state
+        setDispatch(prev => prev ? { ...prev, _mapCoords: { lat, lng }, rider: { ...prev.rider, latitude: lat, longitude: lng } } : prev);
+
+        // compute ETA using device location if available, otherwise use payload
+        const riderCoords = { lat, lng };
+        if (userLocation) {
+          const minutes = computeEtaMinutes(userLocation, riderCoords);
+          if (minutes != null) {
+            setEta(minutes * 60); // store seconds
+          }
+        } else {
+          // normalize ETA: support eta_seconds, eta_minutes, eta
+          if (payload.eta_seconds !== undefined && payload.eta_seconds !== null) {
+            setEta(Number(payload.eta_seconds) || 0);
+          } else if (payload.eta_minutes !== undefined && payload.eta_minutes !== null) {
+            setEta((Number(payload.eta_minutes) || 0) * 60);
+          } else if (payload.eta !== undefined && payload.eta !== null) {
+            // assume payload.eta is minutes if numeric
+            const n = Number(payload.eta);
+            setEta(!Number.isNaN(n) ? n * 60 : payload.eta);
+          }
+        }
+      } catch (err) {
+        console.error('Error parsing WS message', err);
+      }
+    };
+
+    wsRef.current.onerror = (err) => {
+      console.error('Rider WS error', err);
+    };
+
+    wsRef.current.onclose = (ev) => {
+      console.info('Rider WS closed', ev);
+      wsRef.current = null;
+    };
+  };
 
   const searchDispatch = async () => {
     if (!trackingId.trim()) {
-      setError('Please enter a tracking ID');
+      setError('Enter a tracking ID!');
+      setDispatch(null);
       return;
     }
 
     setLoading(true);
     setError(null);
+    setEta(null);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/dispatch/search/${trackingId}`);
-      if (!response.ok) {
-        throw new Error('Dispatch not found');
+      const res = await fetch(`http://127.0.0.1:8000/dispatch/search/${trackingId}`);
+      if (!res.ok) throw new Error('Not found');
+
+      const data = await res.json();
+      const dispatchData = Array.isArray(data) ? data[0] : data;
+
+      if (!dispatchData) {
+        setError('No dispatch found.');
+        setDispatch(null);
+        return;
       }
-      
-      const data = await response.json();
-      setDispatchData(data[0]);
-      startLocationTracking();
+
+      // Normalize coords and auto-fix sign (same logic as provided HTML)
+      let lat = parseFloat(dispatchData.rider?.latitude || 0) || 0;
+      let lng = parseFloat(dispatchData.rider?.longitude || 0) || 0;
+      if (lng > 0 && lat > 0 && lat < 50) {
+        lng = -lng;
+      }
+
+      // Update map marker
+      if (mapInstanceRef.current) {
+        const position = { lat, lng };
+
+        if (!riderMarkerRef.current) {
+          riderMarkerRef.current = new window.google.maps.Marker({
+            position,
+            map: mapInstanceRef.current,
+            title: dispatchData.rider?.username || 'Rider',
+          });
+        } else {
+          riderMarkerRef.current.setPosition(position);
+        }
+
+        mapInstanceRef.current.setCenter(position);
+        mapInstanceRef.current.setZoom(13);
+      }
+
+      setDispatch({ ...dispatchData, _mapCoords: { lat, lng } });
+
+      // set ETA from API response if present (normalize to seconds)
+      const apiEtaRaw = dispatchData.eta_seconds ?? dispatchData.eta_minutes ?? dispatchData.eta ?? dispatchData.rider?.eta_seconds ?? dispatchData.rider?.eta_minutes ?? dispatchData.rider?.eta;
+      if (apiEtaRaw !== undefined && apiEtaRaw !== null) {
+        if (dispatchData.eta_seconds ?? dispatchData.rider?.eta_seconds) {
+          const secs = Number(dispatchData.eta_seconds ?? dispatchData.rider?.eta_seconds) || 0;
+          setEta(secs);
+        } else if (dispatchData.eta_minutes ?? dispatchData.rider?.eta_minutes) {
+          const mins = Number(dispatchData.eta_minutes ?? dispatchData.rider?.eta_minutes) || 0;
+          setEta(mins * 60);
+        } else {
+          const n = Number(apiEtaRaw);
+          setEta(!Number.isNaN(n) ? n * 60 : apiEtaRaw);
+        }
+      } else {
+        setEta(null);
+      }
+
+      // if device location available compute ETA using GPS (override API ETA)
+      if (userLocation) {
+        const minutes = computeEtaMinutes(userLocation, { lat, lng });
+        if (minutes != null) setEta(minutes * 60);
+      }
+
+      // connect websocket using rider id from details
+      const riderId = dispatchData.rider?.id ?? dispatchData.rider?.pk ?? dispatchData.rider?.user_id ?? dispatchData.rider?.uuid ?? null;
+      if (riderId) {
+        connectRiderWs(riderId);
+      } else {
+        if (wsRef.current) {
+          wsRef.current.close();
+          wsRef.current = null;
+        }
+      }
     } catch (err) {
-      setError(`Package not found: ${trackingId}`);
-      setDispatchData(null);
+      setError('Error fetching dispatch: ' + err.message);
+      setDispatch(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const startLocationTracking = () => {
-    // Clear any existing interval
-    if (locationInterval) {
-      clearInterval(locationInterval);
-    }
-
-    // Update location immediately
-    updateLiveLocation();
-
-    // Set up polling for live location updates every 10 seconds
-    const interval = setInterval(updateLiveLocation, 10000);
-    setLocationInterval(interval);
-  };
-
-  const updateLiveLocation = async () => {
-    if (!dispatchData || !dispatchData.rider) {
-      return;
-    }
-
-    try {
-      // Fetch updated dispatch data to get rider's current location
-      const response = await fetch(`http://127.0.0.1:8000/dispatch/search/${dispatchData.tracking_id}`);
-      if (!response.ok) return;
-      
-      const data = await response.json();
-      const updatedDispatch = data[0];
-      
-      // Update current dispatch data
-      setDispatchData(updatedDispatch);
-    } catch (err) {
-      console.error('Error updating location:', err);
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      searchDispatch();
     }
   };
+
+  // responsive CSS used by the component
+  const responsiveStyles = `
+    .dt-root { height: 100vh; display: flex; flex-direction: column; font-family: Arial, sans-serif; }
+    .dt-header { background: #2563eb; color: #fff; padding: 16px; text-align: center; }
+    .dt-main { display: flex; flex-direction: column; flex: 1; background: #f9fafb; }
+    .dt-map { width: 100%; height: 50vh; border-bottom: 1px solid #e5e7eb; }
+    .dt-panel { padding: 16px; overflow: auto; background: white; }
+    .dt-search { display: flex; gap: 8px; margin-bottom: 12px; }
+    .dt-search input { flex: 1; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; }
+    .dt-search button { padding: 8px 12px; background: #f60505ff; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    .dt-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: #f9fafb; }
+    .dt-badge { display:inline-block; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#fff; }
+    /* larger screens: map left, details right */
+    @media(min-width: 768px) {
+      .dt-main { flex-direction: row; }
+      .dt-map { height: 100%; width: calc(100% - 400px); border-right: 1px solid #e5e7eb; border-bottom: none; }
+      .dt-panel { width: 400px; height: 100%; }
+    }
+  `;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 font-sans pt-16 md:pt-20">
-      {/* Header */}
-      <div className="bg-black py-3 md:py-5 shadow-md shadow-red-100 fixed top-0 w-full z-50">
-        <div className="container mx-auto px-4 md:px-5">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-3 md:gap-0">
-            {/* Logo and Home Link */}
-            <Link to="/" className="flex items-center h-12 md:h-16">
-              <img 
-                src={Logo} 
-                alt="OTxpress" 
-                className="h-full w-auto object-contain"
-              />
-            </Link>
-            
-            {/* Search Section */}
-            <div className="flex flex-col md:flex-row justify-center items-center gap-3 md:gap-4 w-full md:w-auto md:flex-1 md:mx-4">
-              <input 
-                type="text" 
-                id="trackingInput"
-                className="px-4 py-2 md:py-3 border-2 border-gray-200 rounded-lg text-base w-full md:min-w-[250px] focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all text-gray-900 bg-white"
-                placeholder="Enter tracking ID (e.g., TRK-A6GARII3)"
-                value={trackingId}
-                onChange={(e) => setTrackingId(e.target.value)}
-              />
-              <button 
-                onClick={searchDispatch} 
-                className="bg-red-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg text-base w-full md:w-auto hover:bg-red-700 active:translate-y-[1px] transition-all"
-              >
-                Track Package
-              </button>
-            </div>
-            
-            {/* Home Button - Hidden on mobile, shown on desktop */}
-            <Link 
-              to="/" 
-              className="hidden md:block bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-base hover:bg-gray-300 transition-all whitespace-nowrap"
-            >
-              Back to Home
-            </Link>
-            
-            {/* Mobile Home Link */}
-            <Link 
-              to="/" 
-              className="md:hidden text-white text-sm mt-2"
-            >
-              ← Back to Home
-            </Link>
+    <div className="dt-root mt-8">
+      <style dangerouslySetInnerHTML={{ __html: responsiveStyles }} />
+      <header className="dt-header">
+        <h1 style={{ margin: 0 }}>📦 TXpress Dispatch Tracker</h1>
+      </header>
+
+      <main className="dt-main">
+        {/* Map area */}
+        <div ref={mapRef} id="map" className="dt-map" />
+
+        {/* Info panel */}
+        <aside className="dt-panel">
+          <div className="dt-search">
+            <input
+              type="text"
+              value={trackingId}
+              onChange={(e) => setTrackingId(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Enter Tracking ID (e.g. TRK-A6GARII3)"
+            />
+            <button onClick={searchDispatch} disabled={loading}>
+              {loading ? 'Searching...' : 'Track'}
+            </button>
           </div>
-        </div>
-      </div>
-      
-      {/* Main Content */}
-      <div className="container mx-auto px-4 md:px-5 pt-6 md:pt-8 pb-12 md:pb-16">
-        {loading && (
-          <div className="text-center py-5 text-red-600">
-            <div className="spinner border-4 border-gray-200 border-t-red-600 rounded-full w-8 h-8 mx-auto mb-3 animate-spin"></div>
-            <p>Searching for your package...</p>
-          </div>
-        )}
-        
-        {error && (
-          <div className="bg-red-100 text-red-800 py-4 px-5 rounded-lg text-center">
-            <h3 className="text-lg font-semibold">⚠️ {error}</h3>
-            <p className="mt-1">Please check your tracking ID and try again.</p>
-          </div>
-        )}
-        
-        {!loading && !error && !dispatchData && (
-          <div className="text-center py-10">
-            <div className="w-16 h-1  flex items-center justify-center mx-auto mb-4 pt-70">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Track Your Package</h2>
-            <p className="text-gray-600">Enter your tracking ID above to see the status of your delivery</p>
-          </div>
-        )}
-        
-        {dispatchData && (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-6 md:gap-8 items-start">
-            {/* Map Container */}
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden h-[400px] md:h-[500px] relative">
-              <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center text-gray-500 p-4">
-                <div className="w-5 h-5 bg-red-600 rounded-full my-3 animate-pulse"></div>
-                <h3 className="text-xl font-semibold mb-2 text-center">Live Tracking Map</h3>
-                <p className="text-center">Package location will be displayed here</p>
-                {dispatchData.rider && (
-                  <div className="p-4 md:p-5 text-center mt-4 w-full">
-                    {dispatchData.rider.latitude && dispatchData.rider.longitude ? (
-                      <>
-                        <div className="w-5 h-5 bg-red-600 rounded-full my-3 mx-auto animate-pulse"></div>
-                        <h3 className="text-red-600 font-semibold mb-4">📍 Live Location</h3>
-                        <div className="bg-red-50 p-3 md:p-4 rounded-lg mb-4">
-                          <strong>Rider: {dispatchData.rider.username}</strong><br />
-                          <small className="text-gray-500">{dispatchData.rider.email}</small>
-                        </div>
-                        <div className="bg-white p-3 md:p-4 rounded-lg shadow-sm">
-                          <div className="text-red-600 font-bold mb-2">Current Coordinates:</div>
-                          <div className="font-mono text-xs md:text-sm">
-                            Lat: {dispatchData.rider.latitude}<br />
-                            Lng: {dispatchData.rider.longitude}
-                          </div>
-                        </div>
-                        <div className="mt-3 md:mt-4 text-xs text-gray-500">
-                          🔄 Updates every 10 seconds
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-5 h-5 bg-gray-500 rounded-full my-3 mx-auto"></div>
-                        <h3 className="text-gray-500 font-semibold mb-4">📍 Location Tracking</h3>
-                        <div className="bg-gray-100 p-3 md:p-4 rounded-lg mb-4">
-                          <strong>Rider: {dispatchData.rider.username}</strong><br />
-                          <small className="text-gray-500">{dispatchData.rider.email}</small>
-                        </div>
-                        <div className="text-gray-500 text-sm">
-                          📡 Waiting for location data...<br />
-                          <small>Rider's GPS will appear here once available</small>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* Info Panel */}
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-red-600 text-white py-4 md:py-5 px-4 md:px-6 text-center">
-                <h2 className="text-lg md:text-xl font-semibold mb-2">Dispatch Details</h2>
-                <div className="font-mono text-sm md:text-base opacity-90">{dispatchData.tracking_id}</div>
-              </div>
-              <div className="p-4 md:p-6">
-                <div className="inline-block bg-red-600 text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase mb-4 md:mb-5">
-                  {dispatchData.status}
-                </div>
-                
-                <div className="mb-4 md:mb-5">
-                  <div className="font-semibold text-red-600 text-sm mb-1">Sender Information</div>
-                  <div className="text-gray-700 text-sm">
-                    {dispatchData.sender_email}<br />
-                    {dispatchData.sender_phone_number || 'Phone not provided'}
-                  </div>
+          <div id="dispatchDetails">
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {!dispatch && !error && <p>Enter a tracking ID to view details.</p>}
+
+            {dispatch && (
+              <>
+                <div className="dt-card">
+                  <h3>Tracking ID: {dispatch.tracking_id}</h3>
+                  <span className="dt-badge" style={{ background: '#2563eb' }}>{dispatch.status}</span>
                 </div>
 
-                <div className="mb-4 md:mb-5">
-                  <div className="font-semibold text-red-600 text-sm mb-1">Recipient Information</div>
-                  <div className="text-gray-700 text-sm">
-                    {dispatchData.recipient_name || 'Name not provided'}<br />
-                    {dispatchData.destination_phone_number}
-                  </div>
+                <div className="dt-card">
+                  <h4>Rider</h4>
+                  <p><strong>Name:</strong> {dispatch.rider?.username || 'N/A'}</p>
+                  <p><strong>Email:</strong> {dispatch.rider?.email || 'N/A'}</p>
+                  <p><strong>Coordinates:</strong> {dispatch._mapCoords?.lat ?? dispatch.rider?.latitude ?? 'N/A'}, {dispatch._mapCoords?.lng ?? dispatch.rider?.longitude ?? 'N/A'}</p>
+                  <p><strong>ETA:</strong> {eta != null ? formatDurationSeconds(eta) : 'N/A'}</p>
+                  <p style={{ fontSize: 12, color: '#6b7280' }}>{userLocation ? 'ETA computed from your device location' : 'Enable device location for ETA'}</p>
                 </div>
 
-                <div className="mb-4 md:mb-5">
-                  <div className="font-semibold text-red-600 text-sm mb-1">Pickup Location</div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2">
-                    <div className="w-2.5 h-2.5 bg-green-500 rounded-full flex-shrink-0"></div>
-                    <div className="text-gray-700 text-sm">{dispatchData.pickup_location.address}</div>
-                  </div>
+                <div className="dt-card">
+                  <h4>Sender</h4>
+                  <p><strong>Email:</strong> {dispatch.sender_email || 'N/A'}</p>
+                  <p><strong>Phone:</strong> {dispatch.sender_phone_number || 'N/A'}</p>
                 </div>
 
-                <div className="mb-4 md:mb-5">
-                  <div className="font-semibold text-red-600 text-sm mb-1">Destination</div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2">
-                    <div className="w-2.5 h-2.5 bg-red-600 rounded-full flex-shrink-0"></div>
-                    <div className="text-gray-700 text-sm">{dispatchData.destination_location.address}</div>
-                  </div>
+                <div className="dt-card">
+                  <h4>Recipient</h4>
+                  <p><strong>Name:</strong> {dispatch.recipient_name || 'N/A'}</p>
+                  <p><strong>Phone:</strong> {dispatch.destination_phone_number || 'N/A'}</p>
                 </div>
 
-                <div className="mb-4 md:mb-5">
-                  <div className="font-semibold text-red-600 text-sm mb-1">Package Details</div>
-                  {dispatchData.package.map((pkg, index) => (
-                    <div key={index} className="bg-gray-50 p-3 md:p-4 rounded-lg border-l-4 border-red-600 mb-3 md:mb-4">
-                      <div className="font-semibold text-red-600 mb-2 text-sm md:text-base">Package {index + 1}: {pkg.description}</div>
-                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                        <div><strong>Weight:</strong> {pkg.weight}kg</div>
-                        <div><strong>Cost:</strong> ₦{parseFloat(pkg.cost).toLocaleString()}</div>
-                      </div>
-                    </div>
+                <div className="dt-card">
+                  <h4>Pickup Location</h4>
+                  <p>{dispatch.pickup_location?.address || 'N/A'}</p>
+                </div>
+
+                <div className="dt-card">
+                  <h4>Destination</h4>
+                  <p>{dispatch.destination_location?.address || 'N/A'}</p>
+                </div>
+
+                <div className="dt-card">
+                  <h4>Packages</h4>
+                  {Array.isArray(dispatch.package) && dispatch.package.map((pkg, i) => (
+                    <p key={i}><strong>Package {i + 1}:</strong> {pkg.description} ({pkg.weight}kg) - ₦{parseFloat(pkg.cost || 0).toLocaleString()}</p>
                   ))}
                 </div>
 
-                <div className="mb-4 md:mb-5">
-                  <div className="font-semibold text-red-600 text-sm mb-1">Total Cost</div>
-                  <div className="text-lg font-bold text-red-600">₦{parseFloat(dispatchData.total_cost).toLocaleString()}</div>
+                <div className="dt-card">
+                  <h4>Total Cost</h4>
+                  <p><strong>₦{parseFloat(dispatch.total_cost || 0).toLocaleString()}</strong></p>
                 </div>
 
-                <div className="mb-4 md:mb-5">
-                  <div className="font-semibold text-red-600 text-sm mb-1">Order Date</div>
-                  <div className="text-gray-700 text-sm">{new Date(dispatchData.created_at).toLocaleString()}</div>
+                <div className="dt-card">
+                  <h4>Order Info</h4>
+                  <p><strong>Created At:</strong> {dispatch.created_at ? new Date(dispatch.created_at).toLocaleString() : 'N/A'}</p>
+                  <p><strong>Payment Status:</strong> {dispatch.payment_status ? '✅ Paid' : '❌ Unpaid'}</p>
                 </div>
-
-                <div className="mb-4 md:mb-5">
-                  <div className="font-semibold text-red-600 text-sm mb-1">Payment Status</div>
-                  <div className={`text-sm ${dispatchData.payment_status ? 'text-green-600' : 'text-red-600'}`}>
-                    {dispatchData.payment_status ? '✓ Paid' : '✗ Unpaid'}
-                  </div>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
-        )}
-      </div>
+        </aside>
+      </main>
     </div>
   );
 };
