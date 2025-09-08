@@ -2,6 +2,20 @@ const API = import.meta.env.VITE_API;
 
 import { toast } from "react-toastify";
 
+import { apiRequest } from "./rider";
+
+export function logoutUser(navigate) {
+
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+
+  toast.success("Logout successful");
+
+  if (navigate) {
+    navigate("/login");
+  }
+}
+
 export async function loginUser(credentials) {
     try {
         const response = await fetch(`${API}/users/login`, {    
@@ -51,4 +65,15 @@ export function getUserFromToken() {
 
 export function isAuthenticated() {
   return !!localStorage.getItem("access_token") && !!localStorage.getItem("refresh_token");
+}
+
+export async function updateRider(riderId, { username, email, phone_number }) {
+  return await apiRequest(
+    `/users/${riderId}/`,
+    "Failed to update rider",
+    {
+      method: "PATCH", // PATCH for partial update
+      body: JSON.stringify({ username, email, phone_number }),
+    }
+  );
 }

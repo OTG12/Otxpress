@@ -12,7 +12,8 @@ import {
   CheckCircle,
   Clipboard,
   Smartphone,
-  XCircle
+  XCircle,
+  MessageCircle,
 } from "lucide-react";
 
 const BookingPage = () => {
@@ -39,18 +40,20 @@ const BookingPage = () => {
 
   const validateForm = () => {
     const requiredFields = [
-      'package_description',
-      'sender_name',
-      'sender_email',
-      'sender_phone_number',
-      'recipient_name',
-      'destination_phone_number',
-      'pickup_location',
-      'destination_location'
+      "package_description",
+      "sender_name",
+      "sender_email",
+      "sender_phone_number",
+      "recipient_name",
+      "destination_phone_number",
+      "pickup_location",
+      "destination_location",
     ];
 
-    const missingFields = requiredFields.filter(field => !formData[field].trim());
-    
+    const missingFields = requiredFields.filter(
+      (field) => !formData[field].trim()
+    );
+
     if (missingFields.length > 0) {
       toast.error("Please fill in all required fields", {
         position: "top-right",
@@ -62,8 +65,8 @@ const BookingPage = () => {
         style: {
           backgroundColor: "#1a1a1a",
           color: "#ffffff",
-          border: "2px solid #ef4444"
-        }
+          border: "2px solid #ef4444",
+        },
       });
       return false;
     }
@@ -74,15 +77,11 @@ const BookingPage = () => {
       toast.error("Please enter a valid sender email address", {
         position: "top-right",
         autoClose: 4000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
         style: {
           backgroundColor: "#1a1a1a",
           color: "#ffffff",
-          border: "2px solid #ef4444"
-        }
+          border: "2px solid #ef4444",
+        },
       });
       return false;
     }
@@ -91,15 +90,11 @@ const BookingPage = () => {
       toast.error("Please enter a valid recipient email address", {
         position: "top-right",
         autoClose: 4000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
         style: {
           backgroundColor: "#1a1a1a",
           color: "#ffffff",
-          border: "2px solid #ef4444"
-        }
+          border: "2px solid #ef4444",
+        },
       });
       return false;
     }
@@ -109,106 +104,90 @@ const BookingPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
 
-    // Show loading toast
     const loadingToastId = toast.loading("Creating your dispatch...", {
       position: "top-right",
       style: {
         backgroundColor: "#1a1a1a",
         color: "#ffffff",
-        border: "2px solid #6b7280"
-      }
+        border: "2px solid #6b7280",
+      },
     });
 
     try {
       const dispatch = await createDispatch(formData);
 
-      // Dismiss loading toast
       toast.dismiss(loadingToastId);
-
-      // Display tracking ID
       setTrackingId(dispatch.tracking_id);
 
-      // Success toast with custom styling (uses Truck icon)
       toast.success(
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Truck className="h-5 w-5" />
           <div>
             <div style={{ fontWeight: 600 }}>Dispatch created successfully</div>
-            <div style={{ fontSize: 12 }}>Your tracking ID is: <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{dispatch.tracking_id}</span></div>
+            <div style={{ fontSize: 12 }}>
+              Your tracking ID is:{" "}
+              <span
+                style={{ fontFamily: "monospace", fontWeight: 700 }}
+              >
+                {dispatch.tracking_id}
+              </span>
+            </div>
           </div>
         </div>,
         {
           position: "top-right",
           autoClose: 8000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
           style: {
             backgroundColor: "#1a1a1a",
             color: "#ffffff",
-            border: "2px solid #10b981"
-          }
+            border: "2px solid #10b981",
+          },
         }
       );
 
-      // Additional info toast (uses Smartphone icon)
       setTimeout(() => {
         toast.info(
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Smartphone className="h-5 w-5" />
             <div>Save your tracking ID to monitor your package!</div>
           </div>,
           {
             position: "top-right",
             autoClose: 6000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
             style: {
               backgroundColor: "#1a1a1a",
               color: "#ffffff",
-              border: "2px solid #3b82f6"
-            }
+              border: "2px solid #3b82f6",
+            },
           }
         );
       }, 1500);
-
-      // Optional: redirect after delay
-      // setTimeout(() => navigate("/dispatches"), 5000);
-
     } catch (error) {
-      // Dismiss loading toast
       toast.dismiss(loadingToastId);
-      
       console.error(error);
-      
-      // Error toast with icon
+
       toast.error(
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <XCircle className="h-5 w-5" />
-          <div>Failed to create dispatch. {error.message || 'Please try again.'}</div>
+          <div>
+            Failed to create dispatch. {error.message || "Please try again."}
+          </div>
         </div>,
         {
           position: "top-right",
           autoClose: 6000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
           style: {
             backgroundColor: "#1a1a1a",
             color: "#ffffff",
-            border: "2px solid #ef4444"
-          }
+            border: "2px solid #ef4444",
+          },
         }
       );
     } finally {
@@ -217,43 +196,49 @@ const BookingPage = () => {
   };
 
   const copyTrackingId = () => {
-    navigator.clipboard.writeText(trackingId).then(() => {
-      toast.success(
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Clipboard className="h-4 w-4" />
-          <div>Tracking ID copied to clipboard!</div>
-        </div>,
-        {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          style: {
-            backgroundColor: "#1a1a1a",
-            color: "#ffffff",
-            border: "2px solid #10b981"
+    navigator.clipboard
+      .writeText(trackingId)
+      .then(() => {
+        toast.success(
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Clipboard className="h-4 w-4" />
+            <div>Tracking ID copied to clipboard!</div>
+          </div>,
+          {
+            position: "top-right",
+            autoClose: 3000,
+            style: {
+              backgroundColor: "#1a1a1a",
+              color: "#ffffff",
+              border: "2px solid #10b981",
+            },
           }
-        }
-      );
-    }).catch(() => {
-      toast.error(
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <XCircle className="h-4 w-4" />
-          <div>Failed to copy tracking ID</div>
-        </div>,
-        {
-          position: "top-right",
-          autoClose: 3000,
-          style: {
-            backgroundColor: "#1a1a1a",
-            color: "#ffffff",
-            border: "2px solid #ef4444"
+        );
+      })
+      .catch(() => {
+        toast.error(
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <XCircle className="h-4 w-4" />
+            <div>Failed to copy tracking ID</div>
+          </div>,
+          {
+            position: "top-right",
+            autoClose: 3000,
+            style: {
+              backgroundColor: "#1a1a1a",
+              color: "#ffffff",
+              border: "2px solid #ef4444",
+            },
           }
-        }
-      );
-    });
+        );
+      });
+  };
+
+  // WhatsApp link
+  const getWhatsAppLink = (id) => {
+    const phoneNumber = "2348095581857"; // replace with your WhatsApp number
+    const message = `I just made a request for your service. This is my tracking ID: ${id}`;
+    return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   };
 
   return (
@@ -265,26 +250,45 @@ const BookingPage = () => {
 
       {trackingId && (
         <div className="bg-gradient-to-r from-green-50 to-green-100 border-l-4 border-green-500 text-green-800 px-6 py-4 rounded-lg mb-6 shadow-sm">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <h3 className="font-semibold text-lg flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 Booking Confirmed!
               </h3>
-              <p className="text-sm mt-1">Your Tracking ID: <span className="font-mono font-bold text-lg">{trackingId}</span></p>
-              <p className="text-xs mt-2 text-green-600">Keep this ID safe to track your package</p>
+              <p className="text-sm mt-1">
+                Your Tracking ID:{" "}
+                <span className="font-mono font-bold text-lg">{trackingId}</span>
+              </p>
+              <p className="text-xs mt-2 text-green-600">
+                Keep this ID safe to track your package
+              </p>
             </div>
-            <button
-              onClick={copyTrackingId}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm"
-            >
-              <Clipboard className="inline mr-2 h-4 w-4" />
-              Copy ID
-            </button>
+
+            <div className="flex gap-3">
+              <button
+                onClick={copyTrackingId}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm"
+              >
+                <Clipboard className="inline mr-2 h-4 w-4" />
+                Copy ID
+              </button>
+
+              <a
+                href={getWhatsAppLink(trackingId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors duration-200 shadow-sm"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Message on WhatsApp
+              </a>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Package */}
         <section className="bg-gray-50 p-6 rounded-lg">
@@ -409,8 +413,8 @@ const BookingPage = () => {
           disabled={isSubmitting}
           className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-200 shadow-lg transform hover:scale-105 ${
             isSubmitting
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-red-200'
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-red-200"
           }`}
         >
           {isSubmitting ? (

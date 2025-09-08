@@ -48,6 +48,7 @@ const App = () => {
     <>
       <Header />
       <main>
+      
         <Routes>
           {/* Public site */}
           <Route path="/" element={<HomePage />} />

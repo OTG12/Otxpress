@@ -1,7 +1,15 @@
-import React, { useState, useEffect } from "react";
+// RiderDashboard.jsx
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { streamLocation, getUserLocation } from "../../services/gsp";
-import { riderStats, fetchRiderProfile, riderDeliveries, logout } from "../../services/rider";
+import { updateRider } from "../../services/auth";
+import {
+  riderStats,
+  fetchRiderProfile,
+  riderDeliveries,
+  logout as riderLogout,
+} from "../../services/rider";
+import { toast } from "react-toastify";
 import {
   Package,
   CheckCircle,
@@ -17,152 +25,203 @@ import {
   Mail,
   Clock,
   AlertCircle,
-  Navigation
+  Navigation,
+  Clipboard,
+  X,
+  Edit3,
+  Phone,
+  Smartphone,
 } from "lucide-react";
+
+/**
+ * RiderDashboard
+ *
+ * Full dashboard for riders including:
+ * - Stats cards
+ * - Filterable deliveries list
+ * - Profile card
+ * - Edit profile modal (updates username, email, phone_number)
+ * - Live location stream handling (streamLocation fallback)
+ * - Logout
+ *
+ * Notes:
+ * - updateRider(profileId, data) is expected to be available.
+ * - All network/service functions are expected to throw errors for failure cases.
+ * - Adjust styling/classes to match your tailwind setup if necessary.
+ */
 
 const RiderDashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    jobs: 0,
-    completed_jobs: 0,
-    total_earnings: 0
-  });
-  const [profile, setProfile] = useState(null);
-  const [deliveries, setDeliveries] = useState([]);
+
+  // --- Loading & error states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // NEW: filter tab state
+  // --- Data states
+  const [stats, setStats] = useState({
+    jobs: 0,
+    completed_jobs: 0,
+    total_earnings: 0,
+  });
+  const [profile, setProfile] = useState(null);
+  const [deliveries, setDeliveries] = useState([]);
+
+  // --- Filter tab
   const [filterTab, setFilterTab] = useState("all"); // all | not_started | in_progress | completed
 
+  // --- Edit modal states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    username: "",
+    email: "",
+    phone_number: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  // --- Misc
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [lastStreamPayload, setLastStreamPayload] = useState(null);
+
+  // --- Fetch initial dashboard data
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    let mounted = true;
+    const fetchAll = async () => {
       try {
         setLoading(true);
-        const [statsData, profileData, deliveriesData] = await Promise.all([
+        const [statsRes, profileRes, deliveriesRes] = await Promise.all([
           riderStats(),
           fetchRiderProfile(),
-          riderDeliveries()
+          riderDeliveries(),
         ]);
-        
-        setStats(statsData);
-        setProfile(profileData);
-        setDeliveries(Array.isArray(deliveriesData) ? deliveriesData : []);
+
+        if (!mounted) return;
+
+        setStats(statsRes || { jobs: 0, completed_jobs: 0, total_earnings: 0 });
+        setProfile(profileRes || null);
+        setDeliveries(Array.isArray(deliveriesRes) ? deliveriesRes : []);
       } catch (err) {
-        setError("Failed to load dashboard data");
-        console.error("Dashboard error:", err);
+        console.error("Dashboard load error:", err);
+        if (!mounted) return;
+        setError("Failed to load dashboard data. Please refresh.");
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    fetchDashboardData();
+    fetchAll();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  // --- Live location streaming & fallback WebSocket
+  useEffect(() => {
+    let cleanupFn = null;
+    let fallbackWs = null;
 
-useEffect(() => {
-  let cleanupFn = null;
-  let fallbackWs = null;
+    const handleStreamPayload = (raw) => {
+      try {
+        const payload = typeof raw === "string" ? JSON.parse(raw) : raw;
+        setLastStreamPayload(payload);
 
-  const handleStreamPayload = (raw) => {
-    try {
-      const payload = typeof raw === "string" ? JSON.parse(raw) : raw;
-      console.log("Location stream payload:", payload);
+        // Normalize common shapes
+        const riderId = payload.rider_id ?? payload.id ?? payload.rider?.id ?? null;
+        const lat = Number(payload.latitude ?? payload.lat ?? payload.rider?.latitude);
+        const lng = Number(payload.longitude ?? payload.lng ?? payload.rider?.longitude);
 
-      // Normalize ids and coords from different payload shapes
-      const riderId = payload.rider_id ?? payload.id ?? payload.rider?.id ?? null;
-      const lat = Number(payload.latitude ?? payload.lat ?? payload.rider?.latitude);
-      const lng = Number(payload.longitude ?? payload.lng ?? payload.rider?.longitude);
-
-      if (!riderId || Number.isNaN(lat) || Number.isNaN(lng)) return;
-
-      // Update deliveries where rider id matches
-      setDeliveries((prev) =>
-        prev.map((d) => {
-          const rid = d.rider?.id ?? d.rider?.user_id ?? null;
-          if (rid === riderId) {
-            return {
-              ...d,
-              rider: {
-                ...d.rider,
-                latitude: lat,
-                longitude: lng,
-              },
-            };
-          }
-          return d;
-        })
-      );
-
-      // If profile belongs to the same rider, update it too
-      setProfile((p) => {
-        if (!p) return p;
-        const pid = p.id ?? p.rider_id;
-        if (pid === riderId) {
-          return { ...p, latitude: lat, longitude: lng };
+        if (!riderId || Number.isNaN(lat) || Number.isNaN(lng)) {
+          return;
         }
-        return p;
-      });
-    } catch (err) {
-      console.error("Error handling stream payload:", err);
-    }
-  };
 
-  (async () => {
-    try {
-      // streamLocation may support a callback or return a socket/unsubscribe.
-      // We call it with a callback if it accepts one.
-      const result = await streamLocation(handleStreamPayload);
+        // update deliveries where rider matches
+        setDeliveries((prev) =>
+          prev.map((d) => {
+            const rid = d.rider?.id ?? d.rider?.user_id ?? null;
+            if (rid === riderId) {
+              return {
+                ...d,
+                rider: {
+                  ...d.rider,
+                  latitude: lat,
+                  longitude: lng,
+                },
+              };
+            }
+            return d;
+          })
+        );
 
-      // If the helper returned a function => treat as unsubscribe
-      if (typeof result === "function") {
-        cleanupFn = result;
-        console.info("streamLocation returned unsubscribe function");
-        return;
+        // update profile if it belongs to same rider
+        setProfile((p) => {
+          if (!p) return p;
+          const pid = p.id ?? p.rider_id;
+          if (pid === riderId) {
+            return { ...p, latitude: lat, longitude: lng };
+          }
+          return p;
+        });
+      } catch (err) {
+        console.error("handleStreamPayload error:", err);
       }
+    };
 
-      // If helper returned a socket-like object (WebSocket), hook handlers
-      if (result && typeof result.onmessage !== "undefined") {
-        const ws = result;
-        ws.onmessage = (ev) => {
-          handleStreamPayload(ev.data);
+    (async () => {
+      try {
+        const result = await streamLocation(handleStreamPayload);
+
+        // streamLocation returned an unsubscribe function
+        if (typeof result === "function") {
+          setIsStreaming(true);
+          cleanupFn = result;
+          console.info("streamLocation provided unsubscribe function.");
+          return;
+        }
+
+        // streamLocation returned a socket-like object
+        if (result && typeof result.onmessage !== "undefined") {
+          const ws = result;
+          setIsStreaming(true);
+          ws.onopen = () => console.info("Provided WebSocket opened by streamLocation");
+          ws.onmessage = (ev) => handleStreamPayload(ev.data);
+          ws.onerror = (e) => console.error("streamLocation websocket error:", e);
+          cleanupFn = () => {
+            try { ws.close(); } catch (e) {}
+          };
+          return;
+        }
+
+        // fallback: open a predictable websocket path
+        const baseWs = import.meta.env.VITE_WS_URL ?? "ws://localhost:8000";
+        const wsUrl = `${baseWs.replace(/\/$/, "")}/ws/riders/`;
+        console.info("Opening fallback WS:", wsUrl);
+        fallbackWs = new WebSocket(wsUrl);
+        fallbackWs.onopen = () => {
+          setIsStreaming(true);
+          console.info("Fallback WS connected");
         };
-        ws.onopen = () => console.info("Location WebSocket connected (from streamLocation)");
-        ws.onerror = (e) => console.error("Location WebSocket error (from streamLocation):", e);
+        fallbackWs.onmessage = (ev) => handleStreamPayload(ev.data);
+        fallbackWs.onerror = (e) => console.error("Fallback WS error:", e);
         cleanupFn = () => {
-          try { ws.close(); } catch (e) {}
+          try { fallbackWs.close(); } catch (e) {}
         };
-        return;
+      } catch (err) {
+        console.error("Error initializing location stream:", err);
+        setIsStreaming(false);
       }
+    })();
 
-      // Fallback: open a raw WebSocket to a predictable endpoint
-      const baseWs = import.meta.env.VITE_WS_URL ?? "ws://localhost:8000";
-      const wsUrl = `${baseWs.replace(/\/$/, "")}/ws/riders/`;
-      console.info("Opening fallback WS to", wsUrl);
-      fallbackWs = new WebSocket(wsUrl);
-      fallbackWs.onopen = () => console.info("Fallback location WS connected");
-      fallbackWs.onmessage = (ev) => handleStreamPayload(ev.data);
-      fallbackWs.onerror = (e) => console.error("Fallback WS error:", e);
-      cleanupFn = () => {
+    return () => {
+      if (typeof cleanupFn === "function") {
+        try { cleanupFn(); } catch (e) { console.warn("cleanupFn failed", e); }
+      }
+      if (fallbackWs && typeof fallbackWs.close === "function") {
         try { fallbackWs.close(); } catch (e) {}
-      };
-    } catch (err) {
-      console.error("Location streaming error:", err);
-    }
-  })();
+      }
+    };
+  }, []);
 
-  return () => {
-    if (typeof cleanupFn === "function") {
-      try { cleanupFn(); } catch (e) { console.warn("cleanup failed", e); }
-    }
-    if (fallbackWs && typeof fallbackWs.close === "function") {
-      try { fallbackWs.close(); } catch (e) {}
-    }
-  };
-}, []);
-
-
-
+  // --- Helpers for status UI
   const getStatusColor = (status) => {
     switch ((status || "").toUpperCase()) {
       case "PACKING":
@@ -193,22 +252,16 @@ useEffect(() => {
     }
   };
 
-  // replace existing handleLogout or wire the button to the shared logout
-  const handleLogout = () => {
-    logout();
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
-  };
 
-  // NEW: helpers to filter deliveries by status groups
+  // --- Filter helpers
   const isNotStarted = (d) => (d.status || "").toUpperCase() === "PACKING";
   const isInProgress = (d) => (d.status || "").toUpperCase() === "IN_TRANSIT";
   const isCompleted = (d) => (d.status || "").toUpperCase() === "DELIVERED";
@@ -217,7 +270,7 @@ useEffect(() => {
     all: deliveries.length,
     not_started: deliveries.filter(isNotStarted).length,
     in_progress: deliveries.filter(isInProgress).length,
-    completed: deliveries.filter(isCompleted).length
+    completed: deliveries.filter(isCompleted).length,
   };
 
   const filteredDeliveries = deliveries.filter((d) => {
@@ -228,6 +281,204 @@ useEffect(() => {
     return true;
   });
 
+  // --- Logout handler
+  const handleLogout = async () => {
+    try {
+      await riderLogout();
+      // redirect to login page after logout
+      navigate("/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+      toast.error("Failed to logout. Please try again.");
+    }
+  };
+
+  // --- Open edit modal (populate form)
+  const openEditModal = () => {
+    setEditForm({
+      username: profile?.username ?? "",
+      email: profile?.email ?? "",
+      phone_number: profile?.phone_number ?? "",
+    });
+    setIsEditing(true);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // --- Save profile (only username, email, phone_number)
+  const handleSaveProfile = async () => {
+    if (!profile || !profile.id) {
+      toast.error("Unable to determine your profile id.");
+      return;
+    }
+
+    // Basic validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (editForm.email && !emailRegex.test(editForm.email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (!editForm.username || !editForm.username.trim()) {
+      toast.error("Username cannot be empty.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      // IMPORTANT: we call updateRider(profileId, data)
+      const updated = await updateRider(profile.id, {
+        username: editForm.username.trim(),
+        email: editForm.email.trim(),
+        phone_number: editForm.phone_number.trim(),
+      });
+
+      // Merge updated fields into UI state
+      setProfile((prev) => ({ ...prev, ...updated }));
+      setIsEditing(false);
+      toast.success("Profile updated successfully!");
+    } catch (err) {
+      console.error("Profile update error:", err);
+      const msg = err?.message ?? "Failed to update profile.";
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // --- Copy tracking id helper (for a given delivery)
+  const copyTrackingId = async (trackingId) => {
+    try {
+      await navigator.clipboard.writeText(trackingId);
+      toast.success("Tracking ID copied to clipboard.");
+    } catch (err) {
+      console.error("copy error:", err);
+      toast.error("Failed to copy tracking ID.");
+    }
+  };
+
+  // --- Quick attempt to open rider's live location on map (if present)
+  const openMapForDelivery = (delivery) => {
+    const lat = delivery?.rider?.latitude;
+    const lng = delivery?.rider?.longitude;
+    if (!lat || !lng) {
+      toast.info("No live location for this delivery yet.");
+      return;
+    }
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${lat},${lng}`
+    )}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  // --- UI: small subcomponents inside this file for readability
+
+  const StatsCard = ({ title, value, Icon }) => (
+    <div className="bg-white rounded-lg shadow-sm p-6 border">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+        </div>
+        <div className="bg-gray-50 p-3 rounded-lg">
+          <Icon className="w-6 h-6 text-gray-600" />
+        </div>
+      </div>
+    </div>
+  );
+
+  const DeliveryItem = ({ delivery }) => {
+    return (
+      <div className="p-6 hover:bg-gray-50 transition-colors">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 mb-2">
+              <span className="font-medium text-gray-900">{delivery.tracking_id}</span>
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
+                  delivery.status
+                )}`}
+              >
+                {getStatusIcon(delivery.status)}
+                <span className="ml-1">{(delivery.status || "").replace("_", " ")}</span>
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">{delivery.package_description}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <div className="flex items-center text-gray-600 mb-1">
+                  <User className="w-4 h-4 mr-1" />
+                  <span className="font-medium">From:</span>
+                </div>
+                <p className="text-gray-900">{delivery.sender_name}</p>
+                <p className="text-gray-600">{delivery.sender_phone_number}</p>
+                <div className="flex items-center text-gray-600 mt-1">
+                  <MapPin className="w-4 h-4 mr-1" />
+                  <span className="text-xs">{delivery.pickup_location}</span>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center text-gray-600 mb-1">
+                  <Navigation className="w-4 h-4 mr-1" />
+                  <span className="font-medium">To:</span>
+                </div>
+                <p className="text-gray-900">{delivery.recipient_name}</p>
+                <p className="text-gray-600">{delivery.destination_phone_number}</p>
+                <div className="flex items-center text-gray-600 mt-1">
+                  <MapPinOff className="w-4 h-4 mr-1" />
+                  <span className="text-xs">{delivery.destination_location}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+          <div className="flex items-center text-sm text-gray-500">
+            <Clock className="w-4 h-4 mr-1" />
+            {formatDate(delivery.created_at)}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <div
+              className={`flex items-center px-2 py-1 rounded-full text-xs ${
+                delivery.payment_status ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+              }`}
+            >
+              <CreditCard className="w-3 h-3 mr-1" />
+              {delivery.payment_status ? "Paid" : "Unpaid"}
+            </div>
+
+            {delivery.total_cost && (
+              <span className="font-semibold text-gray-900">₦{delivery.total_cost}</span>
+            )}
+
+            <button
+              onClick={() => copyTrackingId(delivery.tracking_id)}
+              className="text-sm px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+              title="Copy tracking id"
+            >
+              <Clipboard className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => openMapForDelivery(delivery)}
+              className="text-sm px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+              title="Open live location"
+            >
+              <MapPin className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // --- Page render conditions
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -245,7 +496,7 @@ useEffect(() => {
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <p className="text-red-600">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
@@ -287,41 +538,9 @@ useEffect(() => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm p-6 border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Jobs</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.jobs}</p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Package className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Completed Jobs</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.completed_jobs}</p>
-              </div>
-              <div className="bg-green-100 p-3 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-                <p className="text-2xl font-bold text-gray-900">₦{stats.total_earnings}</p>
-              </div>
-              <div className="bg-yellow-100 p-3 rounded-lg">
-                <DollarSign className="w-6 h-6 text-yellow-600" />
-              </div>
-            </div>
-          </div>
+          <StatsCard title="Total Jobs" value={stats.jobs ?? 0} Icon={Package} />
+          <StatsCard title="Completed Jobs" value={stats.completed_jobs ?? 0} Icon={CheckCircle} />
+          <StatsCard title="Total Earnings" value={`₦${stats.total_earnings ?? 0}`} Icon={DollarSign} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -334,14 +553,14 @@ useEffect(() => {
                   Recent Deliveries
                 </h2>
 
-                {/* NEW: filter tabs */}
+                {/* Filter tabs */}
                 <div className="flex items-center gap-2">
                   {[
                     { key: "all", label: `All (${counts.all})` },
                     { key: "not_started", label: `Not started (${counts.not_started})` },
                     { key: "in_progress", label: `In progress (${counts.in_progress})` },
-                    { key: "completed", label: `Completed (${counts.completed})` }
-                  ].map(tab => (
+                    { key: "completed", label: `Completed (${counts.completed})` },
+                  ].map((tab) => (
                     <button
                       key={tab.key}
                       onClick={() => setFilterTab(tab.key)}
@@ -358,68 +577,7 @@ useEffect(() => {
               <div className="divide-y divide-gray-200">
                 {filteredDeliveries.length > 0 ? (
                   filteredDeliveries.map((delivery) => (
-                    <div key={delivery.id} className="p-6 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="font-medium text-gray-900">
-                              {delivery.tracking_id}
-                            </span>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(delivery.status)}`}>
-                              {getStatusIcon(delivery.status)}
-                              <span className="ml-1">{(delivery.status || "").replace('_', ' ')}</span>
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">{delivery.package_description}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <div className="flex items-center text-gray-600 mb-1">
-                            <User className="w-4 h-4 mr-1" />
-                            <span className="font-medium">From:</span>
-                          </div>
-                          <p className="text-gray-900">{delivery.sender_name}</p>
-                          <p className="text-gray-600">{delivery.sender_phone_number}</p>
-                          <div className="flex items-center text-gray-600 mt-1">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            <span className="text-xs">{delivery.pickup_location}</span>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <div className="flex items-center text-gray-600 mb-1">
-                            <Navigation className="w-4 h-4 mr-1" />
-                            <span className="font-medium">To:</span>
-                          </div>
-                          <p className="text-gray-900">{delivery.recipient_name}</p>
-                          <p className="text-gray-600">{delivery.destination_phone_number}</p>
-                          <div className="flex items-center text-gray-600 mt-1">
-                            <MapPinOff className="w-4 h-4 mr-1" />
-                            <span className="text-xs">{delivery.destination_location}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {formatDate(delivery.created_at)}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className={`flex items-center px-2 py-1 rounded-full text-xs ${
-                            delivery.payment_status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            <CreditCard className="w-3 h-3 mr-1" />
-                            {delivery.payment_status ? 'Paid' : 'Unpaid'}
-                          </div>
-                          {delivery.total_cost && (
-                            <span className="font-semibold text-gray-900">₦{delivery.total_cost}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <DeliveryItem key={delivery.id} delivery={delivery} />
                   ))
                 ) : (
                   <div className="p-12 text-center">
@@ -441,7 +599,8 @@ useEffect(() => {
                   Profile
                 </h2>
               </div>
-              {profile && (
+
+              {profile ? (
                 <div className="p-6 space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="bg-blue-100 p-2 rounded-lg">
@@ -470,19 +629,27 @@ useEffect(() => {
                     <div>
                       <p className="text-sm text-gray-600">Location</p>
                       <p className="font-medium text-gray-900">
-                        {profile.latitude}°N, {profile.longitude}°W
+                        {profile.latitude ?? "—"}°N, {profile.longitude ?? "—"}°W
                       </p>
                     </div>
                   </div>
 
                   <div className="pt-4 border-t">
-                    <Link
-                      to="/rider/profile/edit"
+                    <button
+                      onClick={openEditModal}
                       className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-center block"
                     >
+                      <Edit3 className="inline mr-2 w-4 h-4" />
                       Edit Profile
-                    </Link>
+                    </button>
                   </div>
+                </div>
+              ) : (
+                <div className="p-6 text-center">
+                  <p className="text-gray-500">No profile data available</p>
+                  <Link to="/rider/profile/edit" className="mt-3 inline-block text-blue-600">
+                    Go to profile editor
+                  </Link>
                 </div>
               )}
             </div>
@@ -500,6 +667,7 @@ useEffect(() => {
                   <Truck className="w-5 h-5 text-blue-600" />
                   <span className="text-gray-700">View All Deliveries</span>
                 </Link>
+
                 <Link
                   to="/rider/earnings"
                   className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
@@ -507,6 +675,7 @@ useEffect(() => {
                   <span className="w-5 h-5 text-green-600">₦</span>
                   <span className="text-gray-700">Earnings Report</span>
                 </Link>
+
                 <Link
                   to="/rider/map"
                   className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
@@ -519,6 +688,76 @@ useEffect(() => {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h3 className="text-lg font-semibold">Edit Profile</h3>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="p-2 rounded hover:bg-gray-100"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Username</label>
+                <input
+                  name="username"
+                  value={editForm.username}
+                  onChange={handleEditChange}
+                  className="w-full border px-3 py-2 rounded focus:outline-none focus:ring focus:ring-blue-200"
+                  placeholder="Enter username"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Email</label>
+                <input
+                  name="email"
+                  type="email"
+                  value={editForm.email}
+                  onChange={handleEditChange}
+                  className="w-full border px-3 py-2 rounded focus:outline-none focus:ring focus:ring-blue-200"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Phone number</label>
+                <input
+                  name="phone_number"
+                  value={editForm.phone_number}
+                  onChange={handleEditChange}
+                  className="w-full border px-3 py-2 rounded focus:outline-none focus:ring focus:ring-blue-200"
+                  placeholder="+2348012345678"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={saving}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 rounded border"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

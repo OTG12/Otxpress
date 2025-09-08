@@ -2,7 +2,7 @@ const API = import.meta.env.VITE_API;
 import { toast } from "react-toastify";
 
 // Smart API Request Helper
-async function apiRequest(endpoint, errorMessage, options = {}) {
+export async function apiRequest(endpoint, errorMessage, options = {}) {
   let accessToken = localStorage.getItem("access_token");
   const refreshToken = localStorage.getItem("refresh_token");
 
