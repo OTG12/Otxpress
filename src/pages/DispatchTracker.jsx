@@ -398,6 +398,7 @@ const DispatchTracker = () => {
                   <h4>Rider</h4>
                   <p><strong>Name:</strong> {dispatch.rider?.username || 'N/A'}</p>
                   <p><strong>Email:</strong> {dispatch.rider?.email || 'N/A'}</p>
+                   <p><strong>Phone number :</strong> {dispatch.rider?.phone_number || 'N/A'}</p>
                   <p><strong>Coordinates:</strong> {dispatch._mapCoords?.lat ?? dispatch.rider?.latitude ?? 'N/A'}, {dispatch._mapCoords?.lng ?? dispatch.rider?.longitude ?? 'N/A'}</p>
                   <p><strong>ETA:</strong> {eta != null ? formatDurationSeconds(eta) : 'N/A'}</p>
                   <p style={{ fontSize: 12, color: '#6b7280' }}>{userLocation ? 'ETA computed from your device location' : 'Enable device location for ETA'}</p>
@@ -417,12 +418,12 @@ const DispatchTracker = () => {
 
                 <div className="dt-card">
                   <h4>Pickup Location</h4>
-                  <p>{dispatch.pickup_location?.address || 'N/A'}</p>
+                  <p>{dispatch.pickup_location|| 'N/A'}</p>
                 </div>
 
                 <div className="dt-card">
                   <h4>Destination</h4>
-                  <p>{dispatch.destination_location?.address || 'N/A'}</p>
+                  <p>{dispatch.destination_location || 'N/A'}</p>
                 </div>
 
                 <div className="dt-card">
