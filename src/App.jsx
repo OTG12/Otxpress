@@ -18,6 +18,7 @@ import RiderLogin from "./pages/rider/Login";
 import RiderSignup from "./pages/rider/Signup";
 import RiderDashboard from "./pages/rider/Dashboard";
 import DispatchTracker from "./pages/DispatchTracker";
+import KYCComponent from "./pages/rider/kyc";
 
 import { getUserFromToken, isAuthenticated } from "./services/auth";
 
@@ -82,6 +83,10 @@ const App = () => {
           <Route
             path="/rider/signup"
             element={<RiderSignup onSignup={setUser} />}
+          />
+          <Route 
+            path="rider/kyc"
+            element={<KYCComponent />}
           />
           <Route
             path="/rider/dashboard"

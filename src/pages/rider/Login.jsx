@@ -68,7 +68,7 @@ const RiderLogin = () => {
                     </button>
 
                     <p className="text-sm text-gray-600 mt-2 text-center">
-                        Don't have an account? <Link to="/rider/register" className="text-blue-600 hover:underline">Register</Link>
+                        Don't have an account? <Link to="/rider/signup" className="text-blue-600 hover:underline">Register</Link>
                     </p>
                 </form>
             </div>

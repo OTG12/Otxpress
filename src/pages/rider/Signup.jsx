@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { SignupUser } from "../../services/auth";
 
 const RiderSignup = ({ onSignup }) => {
   const [username, setName] = useState("");
@@ -15,35 +16,11 @@ const RiderSignup = ({ onSignup }) => {
     setError("");
     setLoading(true);
 
+    const credentials = { username, email, phone_number, password };
+
     try {
-      const response = await fetch("http://127.0.0.1:8000/users/create/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, phone_number, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Backend error:", data);
-        throw new Error(
-          data.detail || JSON.stringify(data) || "Signup failed"
-        );
-      }
-
-      // ✅ Save token if your backend returns one
-      if (data.token) {
-        localStorage.setItem("authToken", data.token);
-      }
-
-      // ✅ Call onSignup with user data to update App state
-      if (onSignup) {
-        onSignup(data.user || data); // Adjust based on your API response structure
-      }
-
-      // ✅ Redirect directly to dashboard
-      navigate("/rider/dashboard");
-
+      await SignupUser(credentials);
+      navigate("/rider/kyc");
     } catch (err) {
       setError(err.message);
     } finally {

@@ -52,6 +52,45 @@ export async function loginUser(credentials) {
 }
 
 
+export async function SignupUser(credentials) {
+    try {
+        const response = await fetch(`${API}/users/create/`, {    
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(credentials),
+        });
+
+        let data = null;
+        try {
+            data = await response.json();
+        } catch {
+            // ignore non-JSON responses
+        }
+
+        if (response.ok) {
+            toast.success("Rider created successfully! Continue with your KYC.");
+            if (data) {
+                localStorage.setItem("access_token", data.access_token);
+                localStorage.setItem("refresh_token", data.refresh_token);
+            }
+            return data;
+        } else {
+            const errorMessage = (data && data.detail) || `Signup failed (status ${response.status})`;
+            toast.error(errorMessage);
+            throw new Error(errorMessage);
+        }
+    } catch (error) {
+        toast.error(error.message || "An error occurred during signup");
+        throw error;
+    }
+}
+
+
+
+
+
 export function getUserFromToken() {
   const token = localStorage.getItem("access_token");
   if (!token) return null;
