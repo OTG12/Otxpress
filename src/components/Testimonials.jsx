@@ -104,59 +104,51 @@ const testimonials = [
 
 const Testimonials = () => {
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8 bg-black">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-16">
-          <span className="text-sm font-medium text-red-500 tracking-wider uppercase mb-4 block">
+          <span className="text-sm font-semibold tracking-wider text-red-500 uppercase">
             Customer Experiences
           </span>
-          <h2 className="text-4xl md:text-5xl font-semibold text-white mb-6">
-            Trusted by Businesses <span className="text-red-500">Across Nigeria</span>
+          <h2 className="mt-4 text-3xl font-extrabold text-white sm:text-4xl">
+            Trusted by Businesses Across Nigeria
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Hear from satisfied customers who rely on our premium delivery services
+          <p className="mt-4 max-w-2xl text-xl text-red-400 mx-auto">
+            Hear from satisfied customers who rely on our delivery services
           </p>
         </div>
 
-        {/* Testimonials Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
             <div 
               key={index}
-              className="bg-gradient-to-b from-gray-900 to-black p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 relative border border-gray-800 hover:border-red-500/30 group"
+              className="bg-black p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 relative border border-red-600"
             >
               {/* Rating */}
-              <div className="flex justify-center mb-6">
+              <div className="flex justify-center mb-4">
                 {[...Array(5)].map((_, i) => (
                   <StarIcon 
                     key={i} 
-                    className={`w-5 h-5 ${i < testimonial.rating ? 'text-yellow-400' : 'text-gray-700'}`} 
+                    className={`w-5 h-5 ${i < testimonial.rating ? 'text-red-500' : 'text-gray-700'}`} 
                   />
                 ))}
               </div>
 
               {/* Testimonial Text */}
-              <blockquote className="text-lg text-gray-300 leading-relaxed mb-6 relative">
-                <div className="absolute -top-4 -left-2 text-red-500/20 text-5xl font-serif transform -scale-x-100">
-                  "
-                </div>
-                {testimonial.message}
-                <div className="absolute -bottom-6 -right-2 text-red-500/20 text-5xl font-serif">
-                  "
-                </div>
+              <blockquote className="text-lg text-red-400 italic mb-6">
+                "{testimonial.message}"
               </blockquote>
 
               {/* Customer Info */}
-              <div className="flex items-center pt-4 border-t border-gray-800">
+              <div className="flex items-center">
                 <img
                   src={testimonial.image}
                   alt={testimonial.name}
-                  className="w-12 h-12 rounded-full object-cover mr-4 border-2 border-red-500/50 group-hover:border-red-500 transition-colors duration-300"
+                  className="w-12 h-12 rounded-full object-cover mr-4 border-2 border-red-500"
                 />
                 <div>
                   <p className="font-semibold text-white">{testimonial.name}</p>
-                  <div className="flex items-center text-sm text-gray-400">
+                  <div className="flex items-center text-sm text-red-500">
                     <span>{testimonial.location}</span>
                     <span className="mx-2">•</span>
                     <span>{testimonial.date}</span>
@@ -164,17 +156,18 @@ const Testimonials = () => {
                 </div>
               </div>
 
-              {/* Hover effect overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b from-red-500/3 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-500"></div>
+              {/* Decorative quote mark */}
+              <div className="absolute top-6 right-6 text-red-600 text-5xl font-serif">
+                "
+              </div>
             </div>
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="text-center mt-16">
-          <button className="group inline-flex items-center px-8 py-4 bg-red-600 text-white font-medium rounded-2xl hover:bg-red-700 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl">
+        <div className="mt-16 text-center">
+          <button className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 transition-colors">
             Share Your Experience
-            <svg className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="ml-3 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </button>

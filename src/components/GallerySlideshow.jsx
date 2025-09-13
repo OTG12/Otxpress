@@ -129,8 +129,7 @@
 // export default GallerySlideshow;
 
 import React, { useRef, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { FaArrowLeft, FaArrowRight, FaChevronRight, FaPlay, FaPause } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import CardImg1 from "../assets/card1.jpeg";
 import CardImg2 from "../assets/card2.jpeg";
 import CardImg3 from "../assets/card3.jpeg";
@@ -143,49 +142,43 @@ const services = [
     id: 1,
     image: CardImg1,
     title: "Express Delivery",
-    description: "24-hour guaranteed delivery with real-time tracking and priority handling.",
-    icon: "🚀",
-    features: ["Under 24 hours", "Real-time tracking", "Money-back guarantee"]
+    description: "Get your package delivered in under 24 hours with our priority service.",
+    icon: "🚀"
   },
   {
     id: 2,
     image: CardImg2,
     title: "Nationwide Coverage",
-    description: "Reach all 36 states with our extensive logistics network and local partners.",
-    icon: "🗺️",
-    features: ["All 36 states", "Urban & rural areas", "Local partners"]
+    description: "We deliver to all 36 states with our extensive logistics network.",
+    icon: "🗺️"
   },
   {
     id: 3,
     image: CardImg3,
     title: "Competitive Pricing",
-    description: "Affordable rates without compromising on service quality or reliability.",
-    icon: "💰",
-    features: ["Transparent pricing", "No hidden fees", "Save up to 30%"]
+    description: "Affordable rates without compromising on service quality.",
+    icon: "💰"
   },
   {
     id: 4,
     image: CardImg4,
     title: "Secure Packaging",
-    description: "Professional handling and insurance coverage for all your valuable items.",
-    icon: "🛡️",
-    features: ["Insured packages", "Professional handling", "Damage protection"]
+    description: "Professional handling and packaging to ensure safe delivery.",
+    icon: "🛡️"
   },
   {
     id: 5,
     image: CardImg5,
     title: "Real-Time Tracking",
-    description: "Live GPS tracking with updates every 15 minutes and delivery notifications.",
-    icon: "📍",
-    features: ["Live GPS updates", "15-min intervals", "Delivery alerts"]
+    description: "Live GPS tracking with updates every 15 minutes.",
+    icon: "📍"
   },
   {
     id: 6,
     image: CardImg6,
     title: "Dedicated Support",
-    description: "24/7 customer service with dedicated account managers for premium clients.",
-    icon: "📞",
-    features: ["24/7 availability", "Dedicated managers", "Quick resolution"]
+    description: "24/7 customer service for all your delivery needs.",
+    icon: "📞"
   }
 ];
 
@@ -193,14 +186,13 @@ const GallerySlideshow = () => {
   const scrollRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [autoPlay, setAutoPlay] = useState(true);
 
   const scrollToCard = (index) => {
     if (!scrollRef.current) return;
-    const card = scrollRef.current.querySelector(".service-card");
+    const card = scrollRef.current.querySelector(".card");
     if (!card) return;
     
-    const scrollPosition = index * (card.offsetWidth + 32);
+    const scrollPosition = index * (card.offsetWidth + 24);
     scrollRef.current.scrollTo({
       left: scrollPosition,
       behavior: "smooth"
@@ -218,58 +210,33 @@ const GallerySlideshow = () => {
     scrollToCard(newIndex);
   };
 
-  const toggleAutoPlay = () => {
-    setAutoPlay(!autoPlay);
-  };
-
   useEffect(() => {
     const container = scrollRef.current;
     let scrollInterval;
 
-    if (autoPlay && !isHovered) {
+    const startAutoScroll = () => {
       scrollInterval = setInterval(() => {
+        if (!container || isHovered) return;
         handleNext();
       }, 4000);
-    }
+    };
+
+    startAutoScroll();
 
     return () => {
       clearInterval(scrollInterval);
     };
-  }, [currentIndex, isHovered, autoPlay]);
+  }, [currentIndex, isHovered]);
 
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8 bg-black">
+    <section className="px-4 py-16 bg-black">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <span className="text-sm font-medium text-red-500 tracking-wider uppercase mb-4 block">
-            Premium Solutions
-          </span>
-          <h2 className="text-4xl md:text-5xl font-semibold text-white mb-6">
-            Redefining <span className="text-red-500">Logistics</span> Excellence
-          </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Experience the future of delivery with our cutting-edge services designed for modern businesses
-          </p>
-        </div>
-
-        {/* Controls */}
-        <div className="flex justify-center items-center mb-8 gap-4">
-          <button
-            onClick={toggleAutoPlay}
-            className="flex items-center justify-center w-12 h-12 bg-gray-800 rounded-full hover:bg-red-600 transition-colors duration-300"
-            aria-label={autoPlay ? "Pause slideshow" : "Play slideshow"}
-          >
-            {autoPlay ? (
-              <FaPause className="text-white text-sm" />
-            ) : (
-              <FaPlay className="text-white text-sm" />
-            )}
-          </button>
-          <span className="text-gray-400 text-sm">
-            {autoPlay ? "Auto-scrolling" : "Manual control"}
-          </span>
-        </div>
+        <h2 className="text-3xl font-bold text-center mb-4 text-red-500">
+          Our Premium Services
+        </h2>
+        <p className="text-xl text-center text-red-400 mb-12 max-w-3xl mx-auto">
+          Delivering excellence through every step of your logistics journey
+        </p>
 
         <div 
           className="relative"
@@ -279,7 +246,7 @@ const GallerySlideshow = () => {
           {/* Navigation Arrows */}
           <button 
             onClick={handlePrev}
-            className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 bg-black/90 backdrop-blur-md text-white p-4 rounded-full shadow-2xl hover:bg-red-600 transition-all duration-300 transform hover:scale-110 border border-gray-800"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/80 hover:bg-red-600 text-white p-3 rounded-full shadow-lg transition-all transform hover:scale-110 -ml-4 border border-red-600"
             aria-label="Previous service"
           >
             <FaArrowLeft className="w-5 h-5" />
@@ -287,7 +254,7 @@ const GallerySlideshow = () => {
           
           <button 
             onClick={handleNext}
-            className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 bg-black/90 backdrop-blur-md text-white p-4 rounded-full shadow-2xl hover:bg-red-600 transition-all duration-300 transform hover:scale-110 border border-gray-800"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/80 hover:bg-red-600 text-white p-3 rounded-full shadow-lg transition-all transform hover:scale-110 -mr-4 border border-red-600"
             aria-label="Next service"
           >
             <FaArrowRight className="w-5 h-5" />
@@ -296,116 +263,49 @@ const GallerySlideshow = () => {
           {/* Cards Container */}
           <div
             ref={scrollRef}
-            className="flex gap-8 overflow-x-auto scroll-smooth px-2 py-4 scrollbar-hide"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="flex gap-6 overflow-x-auto scroll-smooth px-2 py-4 scrollbar-hide"
           >
             {services.map((service) => (
               <div
                 key={service.id}
-                className="service-card flex-shrink-0 w-[85%] sm:w-[45%] lg:w-[30%] bg-gradient-to-b from-gray-900 to-black rounded-2xl shadow-xl overflow-hidden relative group transition-all duration-500 hover:-translate-y-3 border border-gray-800 hover:border-red-500/30"
+                className="card flex-shrink-0 w-[85%] sm:w-[45%] lg:w-[30%] bg-gray-900 rounded-2xl shadow-lg overflow-hidden relative group transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border border-red-600"
               >
-                <div className="relative h-72 overflow-hidden">
+                <div className="relative h-64 overflow-hidden">
                   <img
                     src={service.image}
                     alt={service.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                  <div className="absolute top-5 right-5 bg-black/90 backdrop-blur-sm text-2xl p-3 rounded-xl shadow-lg border border-gray-700 group-hover:border-red-500 transition-colors duration-300">
+                  <div className="absolute top-4 right-4 bg-black text-2xl p-2 rounded-lg shadow-md border border-red-500">
                     {service.icon}
                   </div>
-                  
-                  {/* Quick features badge */}
-                  <div className="absolute top-5 left-5">
-                    <div className="bg-red-600 text-white text-xs font-medium px-3 py-1 rounded-full">
-                      {service.features.length} key features
-                    </div>
-                  </div>
                 </div>
-                
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-red-500 transition-colors duration-300">
-                    {service.title}
-                  </h3>
-                  <p className="text-gray-400 mb-4 leading-relaxed">{service.description}</p>
-                  
-                  {/* Feature highlights */}
-                  <div className="mb-5">
-                    {service.features.slice(0, 2).map((feature, index) => (
-                      <div key={index} className="flex items-center text-sm text-gray-400 mb-2">
-                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></div>
-                        {feature}
-                      </div>
-                    ))}
-                    {service.features.length > 2 && (
-                      <div className="text-sm text-gray-500">
-                        +{service.features.length - 2} more features
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Updated Learn More button with Link */}
-                  <Link 
-                    to={`/services/${service.id}`}
-                    className="inline-flex items-center text-red-500 font-medium group-hover:text-red-400 transition-colors duration-300"
-                  >
-                    Explore Service
-                    <FaChevronRight className="ml-2 w-3 h-3 group-hover:translate-x-1 transition-transform duration-300" />
-                  </Link>
+                  <h3 className="text-xl font-bold text-white mb-2">{service.title}</h3>
+                  <p className="text-red-400">{service.description}</p>
+                  <button className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-semibold">
+                    Learn More
+                  </button>
                 </div>
-
-                {/* Hover effect overlay */}
-                <div className="absolute inset-0 bg-gradient-to-b from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-500"></div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Indicators and Progress */}
-        <div className="mt-12">
-          {/* Progress bar */}
-          <div className="w-full bg-gray-800 rounded-full h-1.5 mb-4 overflow-hidden">
-            <div 
-              className="bg-red-500 h-1.5 rounded-full transition-all duration-1000"
-              style={{ width: `${((currentIndex + 1) / services.length) * 100}%` }}
-            ></div>
-          </div>
-          
-          {/* Indicators */}
-          <div className="flex justify-between items-center">
-            <div className="flex gap-2">
-              {services.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => scrollToCard(index)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    currentIndex === index 
-                      ? 'w-8 bg-red-500 rounded-lg' 
-                      : 'bg-gray-700 hover:bg-gray-600'
-                  }`}
-                  aria-label={`Go to service ${index + 1}`}
-                />
-              ))}
-            </div>
-            
-            {/* Counter */}
-            <div className="text-gray-400 text-sm">
-              {currentIndex + 1} / {services.length}
-            </div>
-          </div>
+        {/* Indicators */}
+        <div className="flex justify-center mt-8 gap-2">
+          {services.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => scrollToCard(index)}
+              className={`w-3 h-3 rounded-full transition-all ${
+                currentIndex === index ? 'bg-red-500 w-6' : 'bg-gray-700'
+              }`}
+              aria-label={`Go to service ${index + 1}`}
+            />
+          ))}
         </div>
       </div>
-
-      {/* Custom CSS for scrollbar hiding */}
-      <style jsx>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </section>
   );
 };

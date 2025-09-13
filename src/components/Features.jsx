@@ -4,104 +4,105 @@ import {
   LocateFixed,
   ShieldCheck,
   Headset,
-  Clock,
-  ArrowRight
+  Clock
 } from "lucide-react";
+
+// Option 1: Using Unicode Naira symbol directly
+const NairaIcon = () => (
+  <span className="w-12 h-12 mb-4 text-red-500 text-4xl font-bold">₦</span>
+);
+
+// Option 2: If you want to use react-icons (requires installation)
+// import { FaNairaSign } from "react-icons/fa6";
+// const NairaIcon = () => <FaNairaSign className="w-12 h-12 mb-4 text-red-500" />;
 
 const Features = () => {
   const features = [
     {
       title: "Fast Delivery",
       description: "We deliver packages within 24 hours with our priority service. Guaranteed on-time delivery or your money back.",
-      icon: <Truck className="w-8 h-8" />,
+      icon: <Truck className="w-12 h-12 mb-4" />,
+      color: "text-red-500",
     },
     {
       title: "Live Tracking",
       description: "Real-time GPS tracking with updates every 15 minutes. Know exactly where your package is at all times.",
-      icon: <LocateFixed className="w-8 h-8" />,
+      icon: <LocateFixed className="w-12 h-12 mb-4" />,
+      color: "text-red-500",
     },
     {
       title: "Affordable Pricing",
       description: "Competitive rates in Naira (₦). No hidden fees. Save up to 30% compared to others.",
-      icon: () => <span className="text-2xl font-bold">₦</span>,
+      icon: <NairaIcon />,
+      color: "text-red-500"
     },
     {
       title: "Secure Handling",
       description: "All packages are insured and handled with care. Your items are protected from damage or loss.",
-      icon: <ShieldCheck className="w-8 h-8" />,
+      icon: <ShieldCheck className="w-12 h-12 mb-4" />,
+      color: "text-red-500",
     },
     {
       title: "24/7 Support",
       description: "Our customer service team is available around the clock to assist with any questions or issues.",
-      icon: <Headset className="w-8 h-8" />,
+      icon: <Headset className="w-12 h-12 mb-4" />,
+      color: "text-red-500",
     },
     {
       title: "Flexible Scheduling",
       description: "Choose delivery windows that work for you, including evenings and weekends.",
-      icon: <Clock className="w-8 h-8" />,
+      icon: <Clock className="w-12 h-12 mb-4" />,
+      color: "text-red-500",
     },
   ];
 
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8 bg-black">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-20">
-          <span className="text-sm font-medium text-red-500 tracking-wider uppercase mb-4 block">
+        <div className="text-center mb-16">
+          <span className="text-sm font-semibold tracking-wider text-red-500 uppercase">
             Our Advantages
           </span>
-          <h2 className="text-4xl md:text-5xl font-semibold text-white mb-6">
-            Why Choose <span className="text-red-500">OTxpress</span>
+          <h2 className="mt-4 text-3xl font-extrabold text-red-500 sm:text-4xl">
+            Why Choose OTxpress
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="mt-4 max-w-2xl text-xl text-red-400 mx-auto">
             Delivering excellence through every step of your logistics journey
           </p>
         </div>
 
-        {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group relative bg-gradient-to-b from-gray-900 to-black p-8 rounded-2xl border border-gray-800 hover:border-red-500/30 transition-all duration-500 hover:-translate-y-2"
+              className="group relative p-8 bg-white rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300 overflow-hidden"
             >
-              <div className="flex flex-col h-full">
-                {/* Icon */}
-                <div className="mb-6">
-                  <div className="inline-flex items-center justify-center w-14 h-14 bg-red-500/10 rounded-xl group-hover:bg-red-500/20 transition-colors duration-300">
-                    <div className="text-red-500">
-                      {typeof feature.icon === 'function' ? feature.icon() : feature.icon}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-red-500 transition-colors duration-300">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-400 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-
-                {/* Hover Indicator */}
-                <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-6 h-0.5 bg-red-500"></div>
-                </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className={`${feature.color} mb-6`}>{feature.icon}</div>
+                <h3 className="text-xl font-bold text-red-500 mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-red-400">{feature.description}</p>
               </div>
-
-              {/* Background Effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-500"></div>
             </div>
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="text-center mt-16">
-          <button className="group inline-flex items-center px-8 py-4 bg-red-600 text-white font-medium rounded-2xl hover:bg-red-700 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl">
+        <div className="mt-16 text-center">
+          <button className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 transition-colors">
             Learn More About Our Services
-            <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+            <svg
+              className="ml-3 -mr-1 w-5 h-5"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
           </button>
         </div>
       </div>

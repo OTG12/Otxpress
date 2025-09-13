@@ -9,8 +9,9 @@
 // }
 
 // export default Footer
+
 import React from 'react';
-import { FaTruck, FaPhone, FaEnvelope, FaMapMarkerAlt, FaInstagram, FaWhatsapp } from 'react-icons/fa';
+import { FaTruck, FaPhone, FaEnvelope, FaMapMarkerAlt, FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
 
 const Footer = () => {
   return (
@@ -28,21 +29,17 @@ const Footer = () => {
               Redefining logistics in Nigeria with fast, reliable, and affordable delivery services across all 36 states.
             </p>
             <div className="flex space-x-4">
-              <a 
-                href="https://www.instagram.com/otxpress?igsh=a3RpbXQwcWZjOGd5" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-red-400 hover:text-white transition-colors"
-              >
+              <a href="#" className="text-red-400 hover:text-white transition-colors">
+                <FaFacebook className="w-5 h-5" />
+              </a>
+              <a href="#" className="text-red-400 hover:text-white transition-colors">
+                <FaTwitter className="w-5 h-5" />
+              </a>
+              <a href="#" className="text-red-400 hover:text-white transition-colors">
                 <FaInstagram className="w-5 h-5" />
               </a>
-              <a 
-                href="https://wa.me/2348095581857" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-red-400 hover:text-white transition-colors"
-              >
-                <FaWhatsapp className="w-5 h-5" />
+              <a href="#" className="text-red-400 hover:text-white transition-colors">
+                <FaLinkedin className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -66,14 +63,11 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start">
                 <FaPhone className="text-red-500 mt-1 mr-3 flex-shrink-0" />
-                <div>
-                  <a href="tel:09064862817" className="hover:text-white transition-colors block">+234 906 486 2817</a>
-                  <a href="tel:09036817576" className="hover:text-white transition-colors block mt-1">+234 903 681 7576</a>
-                </div>
+                <span>+234 812 001 3544</span>
               </li>
               <li className="flex items-start">
                 <FaEnvelope className="text-red-500 mt-1 mr-3 flex-shrink-0" />
-                <a href="mailto:otxpress23@gmail.com" className="hover:text-white transition-colors">otxpress23@gmail.com</a>
+                <span>info@otxpress.com.ng</span>
               </li>
               <li className="flex items-start">
                 <FaMapMarkerAlt className="text-red-500 mt-1 mr-3 flex-shrink-0" />
