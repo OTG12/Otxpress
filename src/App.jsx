@@ -31,6 +31,7 @@ const HomePage = () => (
     <Testimonials />
     <Team />
     <Footer />
+    
   </>
 );
 

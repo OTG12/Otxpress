@@ -3,7 +3,7 @@ import { Camera, Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { uploadFile } from '../../services/service';
 import { submitKYC } from '../../services/kyc_service';
 import { getUserFromToken } from '../../services/auth';
-import { toast } from 'react-hot-toast';
+import {toast}  from 'react-hot-toast';
 
 const KYCComponent = () => {
   const [currentUser, setCurrentUser] = useState(null);

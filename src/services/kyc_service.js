@@ -1,6 +1,6 @@
 const API = import.meta.env.VITE_API;
 
-import { toast } from 'react-hot-toast';
+import  {toast } from 'react-hot-toast';
 
 export async function submitKYC(formData) {
     try {
